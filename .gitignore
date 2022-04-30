@@ -1,0 +1,10 @@
+.venv/
+.vscode/
+.mypy_cache/
+__pycache__/
+_out/
+dummy_test.py
+.pytest_cache/
+.env
+telegrambots.egg-info/
+dist/
