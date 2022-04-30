@@ -1,1 +1,1 @@
-telegrambots
+telegrambots==0.0.5rc0
