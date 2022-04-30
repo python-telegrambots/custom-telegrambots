@@ -10,7 +10,7 @@ from telegrambots.wrapper.types.objects import (
 )
 
 
-class CustomTelegramBotsClient(TelegramBotsClient):
+class TelegramBot(TelegramBotsClient):
     def __init__(self, token: str):
         super().__init__(token)
 
