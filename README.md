@@ -4,6 +4,10 @@ A set of custom classes and helpers to work with telegram bots.
 
 _Enjoy strongly typed and heavily type hinted things._
 
+## Installation
+
+The package is available at [PYPI](https://pypi.org/project/telegrambots-custom/)
+
 ## Simple usage example
 
 _Package is in preview state and theses are all in preview and may change later._
