@@ -29,6 +29,21 @@ from telegrambots.wrapper.types.methods import (
     EditMessageText,
     EditChatInviteLink,
     ForwardMessage,
+    GetChat,
+    GetChatAdministrators,
+    GetChatMember,
+    GetChatMemberCount,
+    GetFile,
+    GetGameHighScores,
+    GetMyCommands,
+    GetWebhookInfo,
+    GetStickerSet,
+    GetMyDefaultAdministratorRights,
+    GetUserProfilePhotos,
+    LeaveChat,
+    LogOut,
+    PinChatMessage,
+    PromoteChatMember,
 )
 from telegrambots.wrapper.types.objects import (
     ForceReply,
@@ -44,6 +59,8 @@ from telegrambots.wrapper.types.objects import (
     BotCommandScope,
     InputMedia,
     Message,
+    GameHighScore,
+    UserProfilePhotos,
 )
 
 
@@ -183,8 +200,6 @@ class TelegramBot(TelegramBotsClient):
             mask_position (`Optional[MaskPosition]`, optional): Position where the mask should be placed on
                 the sticker.
 
-        Returns:
-            `bool`: True on success.
         """
         return await self(
             AddStickerToSet(
@@ -226,8 +241,6 @@ class TelegramBot(TelegramBotsClient):
                 sent to the bot when user presses the switch button. 1-64 characters,
                 only A-Z, a-z, 0-9, _ and - are allowed.
 
-        Returns:
-            `bool`: True on success.
         """
         return await self(
             AnswerInlineQuery(
@@ -258,8 +271,6 @@ class TelegramBot(TelegramBotsClient):
             url (`Optional[str]`, optional): URL that will be opened by the user's client.
             cache_time (`Optional[int]`, optional): The maximum amount of time in seconds that the result of the callback query may be cached client-side.
 
-        Returns:
-            `bool`: True on success.
         """
         await self(
             AnswerCallbackQuery(
@@ -286,8 +297,6 @@ class TelegramBot(TelegramBotsClient):
             shipping_options (`Optional[list[ShippingOption]]`, optional): Required if ok is True. A JSON-serialized array of available shipping options.
             error_message (`Optional[str]`, optional): Required if ok is False. Error message in human readable form that explains why it is impossible to complete the order (e.g. "Sorry, delivery to your desired address is unavailable'). Telegram will display this message to the user.
 
-        Returns:
-            `bool`: True on success.
         """
         return await self(
             AnswerShippingQuery(
@@ -311,8 +320,6 @@ class TelegramBot(TelegramBotsClient):
             ok (`bool`): Specify True if everything is alright (goods are available, etc.) and the bot is ready to proceed with the order. Use False if there are any problems.
             error_message (`Optional[str]`, optional): Required if ok is False. Error message in human readable form that explains the reason for failure to proceed with the checkout (e.g. "Sorry, somebody just bought the last of our amazing black T-shirts while you were busy filling out your payment details. Please choose a different color or garment!"). Telegram will display this message to the user.
 
-        Returns:
-            `bool`: True on success.
         """
         return await self(
             AnswerPreCheckoutQuery(
@@ -331,9 +338,6 @@ class TelegramBot(TelegramBotsClient):
             data (`str`): Reverse query identifier.
             ok (`bool`): Specify True if the query is answered successfully.
             error_message (`Optional[str]`, optional): Required if ok is False. Error message in human readable form that explains the reason for failure to perform the query.
-
-        Returns:
-            `bool`: True on success.
         """
         await self(
             AnswerWebAppQuery(
@@ -349,9 +353,6 @@ class TelegramBot(TelegramBotsClient):
             chat_id (`int` | `str`): Unique identifier for the target chat or username of the target supergroup (in the format @supergroupusername).
             invite_link (`Optional[str]`, optional): Required if a chat_id and a message_id are both specified. Identifier of the sent message.
             timeout (`int`, optional): Timeout in seconds for long polling. Defaults to 30.
-
-        Returns:
-            `bool`: True on success.
         """
         return await self(
             ApproveChatJoinRequest(
@@ -374,9 +375,6 @@ class TelegramBot(TelegramBotsClient):
             user_id (`int`): Unique identifier of the target user.
             until_date (`Optional[int]`, optional): Date when the user will be unbanned, unix time. If user is banned for more than 366 days or less than 30 seconds from the current time they are considered to be banned forever.
             revoke_messages (`Optional[str]`, optional): Optional. A JSON-serialized object for a new BotCommand.
-
-        Returns:
-            `bool`: True on success.
         """
         await self(
             BanChatMember(
@@ -395,8 +393,6 @@ class TelegramBot(TelegramBotsClient):
             chat_id (`int` | `str`): Unique identifier for the target chat or username of the target supergroup (in the format @supergroupusername).
             sender_chat_id (`int`): Unique identifier of the target user.
 
-        Returns:
-            `bool`: True on success.
         """
         await self(
             BanChatSenderChat(
@@ -412,8 +408,6 @@ class TelegramBot(TelegramBotsClient):
         Args:
             chat_id (`int` | `str`): Unique identifier for the target chat or username of the target supergroup (in the format @supergroupusername).
 
-        Returns:
-            `bool`: True on success.
         """
         return await self(
             GetChatMenuButton(
@@ -428,9 +422,6 @@ class TelegramBot(TelegramBotsClient):
         Args:
             chat_id (`int` | `str`): Unique identifier for the target chat or username of the target supergroup (in the format @supergroupusername).
             user_id (`int`): Unique identifier of the target user.
-
-        Returns:
-            `bool`: True on success.
         """
         await self(
             DeclineChatJoinRequest(
@@ -446,8 +437,6 @@ class TelegramBot(TelegramBotsClient):
         Args:
             chat_id (`int` | `str`): Unique identifier for the target chat or username of the target supergroup (in the format @supergroupusername).
 
-        Returns:
-            `bool`: True on success.
         """
         await self(
             DeleteChatPhoto(
@@ -461,9 +450,6 @@ class TelegramBot(TelegramBotsClient):
 
         Args:
             chat_id (`int` | `str`): Unique identifier for the target chat or username of the target supergroup (in the format @supergroupusername).
-
-        Returns:
-            `bool`: True on success.
         """
         await self(
             DeleteChatStickerSet(
@@ -478,9 +464,6 @@ class TelegramBot(TelegramBotsClient):
         Args:
             chat_id (`int` | `str`): Unique identifier for the target chat or username of the target supergroup (in the format @supergroupusername).
             message_id (`int`): Identifier of the message to delete.
-
-        Returns:
-            `bool`: True on success.
         """
         await self(
             DeleteMessage(
@@ -491,11 +474,7 @@ class TelegramBot(TelegramBotsClient):
 
     # generate method for DeleteWebhook
     async def delete_webhook(self, drop_pending_updates: Optional[bool] = None):
-        """Use this method to remove webhook integration if you decide to switch back to getUpdates.
-
-        Returns:
-            `bool`: True on success.
-        """
+        """Use this method to remove webhook integration if you decide to switch back to getUpdates."""
         await self(DeleteWebhook(drop_pending_updates))
 
     # generate method for DeleteMyCommands
@@ -504,20 +483,12 @@ class TelegramBot(TelegramBotsClient):
         scope: Optional[BotCommandScope] = None,
         language_code: Optional[str] = None,
     ):
-        """Use this method to delete your own commands.
-
-        Returns:
-            `bool`: True on success.
-        """
+        """Use this method to delete your own commands."""
         await self(DeleteMyCommands(scope, language_code))
 
     # generate method for DeleteStickerFromSet
     async def delete_sticker_from_set(self, sticker: str):
-        """Use this method to delete a sticker from a set created by the bot.
-
-        Returns:
-            `bool`: True on success.
-        """
+        """Use this method to delete a sticker from a set created by the bot."""
         await self(DeleteStickerFromSet(sticker))
 
     # generate method for EditMessageCaption
@@ -574,9 +545,6 @@ class TelegramBot(TelegramBotsClient):
             caption_entities (`Optional[list[MessageEntity]]`, optional): A JSON-serialized object for an array of special entities that appear in the caption.
             parse_mode (`Optional[str]`, optional): Send Markdown or HTML, if you want Telegram apps to show bold, italic, fixed-width text or inline URLs in your bot's message.
             reply_markup (`Optional[InlineKeyboardMarkup]`, optional): A JSON-serialized object for an inline keyboard.
-
-        Returns:
-            `bool`: True on success.
         """
         await self(
             EditMessageCaption(
@@ -627,9 +595,6 @@ class TelegramBot(TelegramBotsClient):
         Args:
             inline_message_id (`str`): Required. Identifier of the inline message.
             reply_markup (`Optional[InlineKeyboardMarkup]`, optional): A JSON-serialized object for an inline keyboard.
-
-        Returns:
-            `bool`: True on success.
         """
         await self(
             EditMessageReplyMarkup(
@@ -698,8 +663,6 @@ class TelegramBot(TelegramBotsClient):
             disable_web_page_preview (`Optional[bool]`, optional): Disables link previews for links in this message.
             reply_markup (`Optional[InlineKeyboardMarkup]`, optional): A JSON-serialized object for an inline keyboard.
 
-        Returns:
-            `bool`: True on success.
         """
         await self(
             EditMessageText(
@@ -777,8 +740,6 @@ class TelegramBot(TelegramBotsClient):
             proximity_alert_radius (`Optional[int]`, optional): The maximum distance for proximity alerts about approaching another chat member, in meters.
             reply_markup (`Optional[InlineKeyboardMarkup]`, optional): A JSON-serialized object for an inline keyboard.
 
-        Returns:
-            `bool`: True on success.
         """
         await self(
             EditMessageLiveLocation(
@@ -836,9 +797,6 @@ class TelegramBot(TelegramBotsClient):
             inline_message_id (`str`): Required. Identifier of the inline message.
             media (`InputMedia`): A JSON-serialized object for a new media content of the message.
             reply_markup (`Optional[InlineKeyboardMarkup]`, optional): A JSON-serialized object for a new inline keyboard.
-
-        Returns:
-            `bool`: True on success.
         """
         await self(
             EditMessageMedia(
@@ -910,5 +868,250 @@ class TelegramBot(TelegramBotsClient):
                 message_id=message_id,
                 disable_notification=disable_notification,
                 protect_content=protect_content,
+            )
+        )
+
+    # generate method for GetChat
+    async def get_chat(self, chat_id: int | str):
+        """Use this method to get up to date information about the chat (current name of the user for one-on-one conversations, current username of a user, group or channel, etc.).
+
+        Args:
+            chat_id (`int` | `str`): Unique identifier for the target chat or username of the target channel (in the format @channelusername).
+
+        Returns:
+            `Chat`: On success, the chat object is returned.
+        """
+        return await self(GetChat(chat_id=chat_id))
+
+    # generate method for GetChatAdministrators
+    async def get_chat_administrators(self, chat_id: int | str):
+        """Use this method to get a list of administrators in a chat. On success, returns an Array of ChatMember objects that contains information about all chat administrators except other bots. If the chat is a group or a supergroup and no administrators were appointed, only the creator will be returned.
+
+        Args:
+            chat_id (`int` | `str`): Unique identifier for the target chat or username of the target channel (in the format @channelusername).
+
+        Returns:
+            `ChatMembers`: On success, returns an Array of ChatMember objects that contains information about all chat administrators except other bots.
+        """
+        return await self(GetChatAdministrators(chat_id=chat_id))
+
+    # generate method for GetChatMembersCount
+    async def get_chat_member_count(self, chat_id: int | str):
+        """Use this method to get the number of members in a chat.
+
+        Args:
+            chat_id (`int` | `str`): Unique identifier for the target chat or username of the target channel (in the format @channelusername).
+
+        Returns:
+            `int`: On success, returns the number of members in the chat.
+        """
+        return await self(GetChatMemberCount(chat_id=chat_id))
+
+    # generate method for GetChatMember
+    async def get_chat_member(self, chat_id: int | str, user_id: int):
+        """Use this method to get information about a member of a chat.
+
+        Args:
+            chat_id (`int` | `str`): Unique identifier for the target chat or username of the target channel (in the format @channelusername).
+            user_id (`int`): Unique identifier of the target user.
+
+        Returns:
+            `ChatMember`: On success, returns a ChatMember object.
+        """
+        return await self(GetChatMember(chat_id=chat_id, user_id=user_id))
+
+    # generate method for GetFile
+    async def get_file(self, file_id: str):
+        """Use this method to get basic info about a file and prepare it for downloading. For the moment, bots can download files of up to 20MB in size.
+
+        Args:
+            file_id (`str`): File identifier to get info about.
+
+        Returns:
+            `File`: On success, a File object is returned.
+        """
+        return await self(GetFile(file_id=file_id))
+
+    # generate method for GetGameHighScores
+    async def get_game_high_scores(
+        self,
+        user_id: int,
+        chat_id: Optional[int] = None,
+        message_id: Optional[int] = None,
+        inline_message_id: Optional[str] = None,
+    ) -> list[GameHighScore]:
+        """Use this method to get data for high score tables. Will return the score of the specified user and several of his neighbors in a game. On success, returns an Array of GameHighScore objects.
+
+        Args:
+            user_id (`int`): Target user id.
+            chat_id (`int` | `str`): Unique identifier for the target chat or username of the target channel (in the format @channelusername).
+            message_id (`int`): Identifier of the sent message.
+            inline_message_id (`Optional[str]`, optional): Identifier of the inline message.
+
+        Returns:
+            `GameHighScores`: On success, returns an Array of GameHighScore objects.
+        """
+        return await self(
+            GetGameHighScores(
+                user_id=user_id,
+                chat_id=chat_id,
+                message_id=message_id,
+                inline_message_id=inline_message_id,
+            )
+        )
+
+    # generate method for GetMyCommands
+    async def get_my_commands(
+        self,
+        scope: Optional[BotCommandScope] = None,
+        language_code: Optional[str] = None,
+    ):
+        """Use this method to get the current list of the bot's commands. Requires no parameters. Returns Array of BotCommand objects.
+
+        Args:
+            scope (`Optional[BotCommandScope]`, optional): Scope of the commands to be returned.
+            language_code (`Optional[str]`, optional): IETF language tag of the returned localized command descriptions.
+
+        Returns:
+            `BotCommands`: On success, returns an Array of BotCommand objects.
+        """
+        return await self(GetMyCommands(scope, language_code))
+
+    # generate method for GetWebhookInfo
+    async def get_webhook_info(self):
+        """Use this method to get current webhook status. Requires no parameters. On success, returns a WebhookInfo object. If the bot is using getUpdates, will return an object with the url field empty.
+
+        Returns:
+            `WebhookInfo`: On success, returns a WebhookInfo object.
+        """
+        return await self(GetWebhookInfo())
+
+    # generate method for GetStickerSet
+    async def get_sticker_set(self, name: str):
+        """Use this method to get a sticker set. On success, a StickerSet object is returned.
+
+        Args:
+            name (`str`): Short name of the sticker set that is used in t.me/addstickers/ URLs (e.g., animals).
+
+        Returns:
+            `StickerSet`: On success, a StickerSet object is returned.
+        """
+        return await self(GetStickerSet(name=name))
+
+    # generate method for GetMyDefaultAdministratorRights
+    async def get_my_default_administrator_rights(self):
+        """Use this method to get information about the current default chat administrator.
+
+        Returns:
+            `ChatPermissions`: On success, returns a ChatPermissions object.
+        """
+        return await self(GetMyDefaultAdministratorRights())
+
+    # generate method for GetUserProfilePhotos
+    async def get_user_profile_photos(
+        self, user_id: int, offset: Optional[int] = None, limit: int = 5
+    ) -> UserProfilePhotos:
+        """Use this method to get a user's profile pictures. Returns a UserProfilePhotos object.
+
+        Args:
+            user_id (`int`): Unique identifier of the target user.
+            offset (`int`, optional): Sequential number of the first photo to be returned. By default, all photos are returned.
+            limit (`int`, optional): Limits the number of photos to be retrieved. Values between 1—100 are accepted. Defaults to 100.
+
+        Returns:
+            `UserProfilePhotos`: On success, returns a UserProfilePhotos object.
+        """
+        return await self(
+            GetUserProfilePhotos(user_id=user_id, offset=offset, limit=limit)
+        )
+
+    # generate method for LeaveChat
+    async def leave_chat(self, chat_id: int | str):
+        """Use this method for your bot to leave a group, supergroup or channel.
+
+        Args:
+            chat_id (`int` | `str`): Unique identifier for the target chat or username of the target supergroup or channel (in the format @channelusername).
+        """
+        await self(LeaveChat(chat_id=chat_id))
+
+    # generate method for LogOut
+    async def log_out(self):
+        """Use this method to log out from the telegram servers."""
+        await self(LogOut())
+
+    # generate method for PinChatMessage
+    async def pin_chat_message(
+        self,
+        chat_id: int | str,
+        message_id: int,
+        disable_notification: Optional[bool] = None,
+    ):
+        """Use this method to pin a message in a supergroup. The bot must be an administrator in the chat for this to work and must have the ‘can_pin_messages’ admin right in the supergroup or ‘can_edit_messages’ admin right in the channel. Returns True on success.
+
+        Args:
+            chat_id (`int` | `str`): Unique identifier for the target chat or username of the target supergroup (in the format @supergroupusername).
+            message_id (`int`): Identifier of a message to pin.
+            disable_notification (`bool`, optional): Pass True, if it is not necessary to send a notification to all chat members about the new pinned message. Notifications are always disabled in channels.
+
+        Returns:
+            `bool`: On success, True is returned.
+        """
+        return await self(
+            PinChatMessage(
+                chat_id=chat_id,
+                message_id=message_id,
+                disable_notification=disable_notification,
+            )
+        )
+
+    # generate method for PromoteChatMember
+    async def promote_chat_member(
+        self,
+        chat_id: int | str,
+        user_id: int,
+        is_anonymous: Optional[bool] = None,
+        can_manage_chat: Optional[bool] = None,
+        can_change_info: Optional[bool] = None,
+        can_manage_video_chats: Optional[bool] = None,
+        can_post_messages: Optional[bool] = None,
+        can_edit_messages: Optional[bool] = None,
+        can_delete_messages: Optional[bool] = None,
+        can_invite_users: Optional[bool] = None,
+        can_restrict_members: Optional[bool] = None,
+        can_pin_messages: Optional[bool] = None,
+        can_promote_members: Optional[bool] = None,
+    ):
+        """Use this method to promote or demote a user in a supergroup or a channel. The bot must be an administrator in the chat for this to work and must have the appropriate admin rights. Pass False for all boolean parameters to demote a user. Returns True on success.
+
+        Args:
+            chat_id (`int` | `str`): Unique identifier for the target chat or username of the target channel (in the format @channelusername).
+            user_id (`int`): Unique identifier of the target user.
+            is_anonymous (`bool`, optional): Pass True, if the administrator's presence in the chat is hidden.
+            can_manage_chat (`bool`, optional): Pass True, if the administrator can change chat title, photo and other settings.
+            can_change_info (`bool`, optional): Pass True, if the administrator can change chat title, photo and other settings.
+            can_manage_video_chats (`bool`, optional): Pass True, if the administrator can create and delete video notes.
+            can_post_messages (`bool`, optional): Pass True, if the administrator can create channel posts, channels only.
+            can_edit_messages (`bool`, optional): Pass True, if the administrator can edit messages of other users, channels only.
+            can_delete_messages (`bool`, optional): Pass True, if the administrator can delete messages of other users.
+            can_invite_users (`bool`, optional): Pass True, if the administrator can invite new users to the chat.
+            can_restrict_members (`bool`, optional): Pass True, if the administrator can restrict, ban or unban chat members.
+            can_pin_messages (`bool`, optional): Pass True, if the administrator can pin messages, supergroups only.
+            can_promote_members (`bool`, optional): Pass True, if the administrator can add new administrators with a subset of his own privileges or demote administrators that he has promoted, directly or indirectly (promoted by administrators that were appointed by him).
+        """
+        return await self(
+            PromoteChatMember(
+                chat_id=chat_id,
+                user_id=user_id,
+                is_anonymous=is_anonymous,
+                can_manage_chat=can_manage_chat,
+                can_change_info=can_change_info,
+                can_post_messages=can_post_messages,
+                can_edit_messages=can_edit_messages,
+                can_manage_video_chats=can_manage_video_chats,
+                can_delete_messages=can_delete_messages,
+                can_invite_users=can_invite_users,
+                can_restrict_members=can_restrict_members,
+                can_pin_messages=can_pin_messages,
+                can_promote_members=can_promote_members,
             )
         )
