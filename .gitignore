@@ -3,7 +3,7 @@
 .mypy_cache/
 __pycache__/
 _out/
-dummy_test.py
+dummy_test*
 .pytest_cache/
 .env
 telegrambots.egg-info/

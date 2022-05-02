@@ -63,7 +63,9 @@ if __name__ == "__main__":
     asyncio.run(main())
 ```
 
-Process updates in parallel:
+### Process updates in parallel
+
+Dispatcher processes updates sequentially by default. but you can change the behavior.
 
 ```py
 # ---- sniff ----
@@ -81,7 +83,9 @@ dp = Dispatcher(
 )
 ```
 
-Manage propagation of handlers:
+### Manage propagation of handlers
+
+Stop processing this handler or all of pending handlers.
 
 ```py
 @dp.register_message_handler(mf.regex("^/start") & mf.private)
@@ -97,3 +101,59 @@ async def handle_message(context: MessageContext):
     context.continue_propagation()  # -> continue propagating this update to other handlers.
 
 ```
+
+### Custom filters
+
+You can create custom filters for any type of update.
+
+#### Abstractly ( Slow, Featured )
+
+Create a class that inherit from `Filter`, then setup your filter.
+
+```py
+from typing import Optional
+
+from src.telegrambots.custom.filters import Filter
+from telegrambots.wrapper.types.objects import Message
+
+
+class AdvancedMessageFilter(Filter[Message]):
+    def __init__(self) -> None:
+        super().__init__()
+        # ---- do your initialization here ----
+
+    def __check__(self, update: Optional[Message]) -> bool:
+        # ---- check if update is a valid for your case ----
+        return True
+
+    # ---- or anything you like ----
+
+# @dp.register_message_handler(AdvancedMessageFilter())
+#    ...
+```
+
+#### Using factories ( Fast, Low options )
+
+Or you can use filter factories ( available for each type of update ) to quickly create filter.
+
+```py
+import re
+
+from src.telegrambots.custom.filters.messages import message_filter_factory
+
+
+def regex(pattern: str | re.Pattern[str]):
+    if isinstance(pattern, str):
+        ap = re.compile(pattern)
+    else:
+        ap = pattern
+
+    return message_filter_factory(
+        lambda message: message.text is not None and ap.match(message.text) is not None
+    )
+
+# @dp.register_message_handler(regex('start'))
+#    ...
+```
+
+...
