@@ -1,18 +1,28 @@
 from typing import Optional
+
 from telegrambots.wrapper.client import TelegramBotsClient
-from telegrambots.wrapper.types.methods import SendMessage
+from telegrambots.wrapper.types.methods import GetUpdates, SendMessage, GetMe
 from telegrambots.wrapper.types.objects import (
-    MessageEntity,
+    ForceReply,
     InlineKeyboardMarkup,
+    MessageEntity,
     ReplyKeyboardMarkup,
     ReplyKeyboardRemove,
-    ForceReply,
+    Update,
 )
 
 
 class TelegramBot(TelegramBotsClient):
     def __init__(self, token: str):
         super().__init__(token)
+
+    async def get_me(self):
+        """Use this method to get information about the bot.
+
+        Returns:
+            `User`: A :class:`User` object.
+        """
+        return await self(GetMe())
 
     async def send_message(
         self,
@@ -67,3 +77,54 @@ class TelegramBot(TelegramBotsClient):
                 reply_markup=reply_markup,
             )
         )
+
+    async def get_updates(
+        self,
+        offset: Optional[int] = None,
+        limit: int = 100,
+        timeout: int = 0,
+        allowed_updates: Optional[list[str]] = None,
+    ) -> list[Update]:
+        """Use this method to receive incoming updates using long polling.
+
+        Args:
+            offset (`Optional[int]`, optional): Identifier of the first update to be returned.
+                Must be greater by one than the highest among the identifiers of previously received updates.
+                By default, updates starting with the earliest unconfirmed update are returned.
+            limit (`Optional[int]`, optional): Limits the number of updates to be retrieved.
+                Values between 1—100 are accepted. Defaults to 100.
+            timeout (`Optional[int]`, optional): Timeout in seconds for long polling.
+                Defaults to 0, i.e. usual short polling.
+            allowed_updates (`Optional[list[str]]`, optional): List the types of updates you want your bot to receive.
+
+        Returns:
+            `list[Update]`: A list of updates.
+        """
+        return await self(
+            GetUpdates(
+                offset=offset,
+                limit=limit,
+                timeout=timeout,
+                allowed_updates=allowed_updates,
+            )
+        )
+
+    async def stream_updates(self, allowed_updates: Optional[list[str]] = None):
+        """Streams updates from Telegram server.
+
+        Args:
+            allowed_updates (`Optional[list[str]]`, optional): List the types of updates you want your bot to receive.
+
+        Yields:
+            `Update`: Updates received from the server.
+        """
+        offset = 0
+
+        while True:
+            updates = await self.get_updates(
+                offset, limit=100, timeout=300, allowed_updates=allowed_updates
+            )
+
+            for update in updates:
+                yield update
+                offset = update.update_id + 1
