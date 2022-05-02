@@ -4,20 +4,24 @@ from telegrambots.wrapper.types.objects import CallbackQuery, Message, Update
 
 from .client import TelegramBot
 from .contexts import CallbackQueryContext, MessageContext
-from .contexts._contexts.context_template import ContextTemplate, GenericContext
+from .contexts._contexts.context_template import GenericContext
+from .exceptions.propagations import BreakPropagation, ContinuePropagation
 from .filters._filters.filter_template import Filter
 from .general import TUpdate
 from .handlers._handlers.handler_template import Handler, HandlerTemplate
 from .handlers._handlers.update_handler import CallbackQueryHandler, MessageHandler
+from .processor import ProcessorTemplate, SequentialProcessor
 
 
 class Dispatcher:
     def __init__(
         self,
-        bot: TelegramBot,
-        _handle_error: Optional[
+        _bot: TelegramBot,
+        *,
+        handle_error: Optional[
             Callable[[TelegramBot, Exception], Coroutine[Any, Any, None]]
         ] = None,
+        processor_type: Optional[type[ProcessorTemplate[Update]]] = None,
     ) -> None:
 
         """Initializes the dispatcher.
@@ -26,16 +30,27 @@ class Dispatcher:
             bot (`TelegramBot`): The bot to use.
             _handle_error (`Callable[[TelegramBot, Exception], Coroutine[None, None, None]]`, optional): A function that handles errors.
         """
-        self._bot = bot
+        self._bot = _bot
         self._handlers: list[HandlerTemplate] = []
-        self._handle_error = _handle_error
+        self._handle_error = handle_error
+
+        self._processor: ProcessorTemplate[Update]
+        if processor_type is None:
+            self._processor = SequentialProcessor[Update](self._process_update)
+        else:
+            self._processor = processor_type(self._process_update)
 
     async def _process_update(self, update: Update):
         for handler in self._handlers:
             if handler.should_process(update):
                 try:
-                    await handler.__process__(ContextTemplate(self._bot, update))
+                    await handler.process(self._bot, update)
+                except ContinuePropagation:
+                    continue  # -> continue to next handler
+                except BreakPropagation:
+                    break  # -> break from loop
                 except Exception as e:
+                    # -> handle error
                     if self._handle_error is not None:
                         await self._handle_error(self._bot, e)
 
@@ -45,7 +60,7 @@ class Dispatcher:
         Args:
             update (`Update`): The update to feed.
         """
-        await self._process_update(update)
+        await self._processor.process(update)
 
     def add_handler(self, handler: HandlerTemplate):
         """Adds a handler to the dispatcher.

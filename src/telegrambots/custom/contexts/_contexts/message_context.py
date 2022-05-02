@@ -22,6 +22,7 @@ class MessageContext(GenericContext[Message]):
     def __extractor__(self, update: Update) -> Optional[Message]:
         return update.message
 
+    @final
     async def reply_text(
         self,
         text: str,

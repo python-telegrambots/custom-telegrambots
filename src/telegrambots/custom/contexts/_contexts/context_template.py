@@ -1,10 +1,11 @@
 from abc import ABC, ABCMeta
-from typing import Callable, Generic, Optional, final
+from typing import Callable, Generic, NoReturn, Optional, final
 
 from telegrambots.wrapper.types.objects import Update
 
 from ...client import TelegramBot
 from ...general import Exctractable, TUpdate
+from ...exceptions.propagations import BreakPropagation, ContinuePropagation
 
 
 class ContextTemplate(metaclass=ABCMeta):
@@ -22,6 +23,14 @@ class ContextTemplate(metaclass=ABCMeta):
     @property
     def wrapper_update(self) -> Update:
         return self.__update
+
+    def stop_propagation(self) -> NoReturn:
+        """Stops the propagation of the current context."""
+        raise BreakPropagation()
+
+    def continue_propagation(self) -> NoReturn:
+        """Continues the propagation of the current context."""
+        raise ContinuePropagation()
 
 
 class GenericContext(Generic[TUpdate], Exctractable[TUpdate], ABC, ContextTemplate):

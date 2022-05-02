@@ -11,19 +11,23 @@ class Filter(Generic[TUpdate], Checkable[TUpdate], ABC):
             return False
         return self.__check__(update)
 
+    @final
     def __and__(self, other: "Filter[TUpdate]"):
         if not isinstance(other, Filter):  # type: ignore
             raise TypeError("other must be Filter")
         return AndFilter(self, other)
 
+    @final
     def __or__(self, other: "Filter[TUpdate]"):
         if not isinstance(other, Filter):  # type: ignore
             raise TypeError("other must be Filter")
         return OrFilter(self, other)
 
+    @final
     def __invert__(self):
         return ReverseFilter(self)
 
+    @final
     def __xor__(self, other: "Filter[TUpdate]"):
         if not isinstance(other, Filter):  # type: ignore
             raise TypeError("other must be Filter")
@@ -34,6 +38,7 @@ class SealedFilter(Filter[TUpdate]):
     def __init__(self, filter: Callable[[TUpdate], bool]):
         self._filter = filter
 
+    @final
     def __check__(self, update: Optional[TUpdate]) -> bool:
         if update is None:
             return False
@@ -59,6 +64,7 @@ class AndFilter(JoinedFilter[TUpdate]):
     def __init__(self, *_filters: Filter[TUpdate]) -> None:
         super().__init__(*_filters)
 
+    @final
     def __wrapping__(self, update: TUpdate) -> bool:
         for filter in self._filters:
             if not filter.check(update):
@@ -70,6 +76,7 @@ class ReverseFilter(JoinedFilter[TUpdate]):
     def __init__(self, *_filters: Filter[TUpdate]) -> None:
         super().__init__(*_filters)
 
+    @final
     def __wrapping__(self, update: TUpdate) -> bool:
         for filter in self._filters:
             if filter.check(update):
@@ -81,6 +88,7 @@ class OrFilter(JoinedFilter[TUpdate]):
     def __init__(self, *_filters: Filter[TUpdate]) -> None:
         super().__init__(*_filters)
 
+    @final
     def __wrapping__(self, update: TUpdate) -> bool:
         for filter in self._filters:
             if filter.check(update):
@@ -92,6 +100,7 @@ class XorFilter(JoinedFilter[TUpdate]):
     def __init__(self, *_filters: Filter[TUpdate]) -> None:
         super().__init__(*_filters)
 
+    @final
     def __wrapping__(self, update: TUpdate) -> bool:
         count = 0
         for filter in self._filters:
