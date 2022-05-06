@@ -1,4 +1,4 @@
-from typing import Optional, cast
+from typing import Optional, cast, Union
 
 from telegrambots.wrapper.client import TelegramBotsClient
 from telegrambots.wrapper.types.methods import (
@@ -44,6 +44,34 @@ from telegrambots.wrapper.types.methods import (
     LogOut,
     PinChatMessage,
     PromoteChatMember,
+    RestrictChatMember,
+    RevokeChatInviteLink,
+    SendChatAction,
+    SendMediaGroup,
+    SendSticker,
+    SendVideo,
+    SetChatDescription,
+    SetChatPhoto,
+    SetChatStickerSet,
+    SetChatTitle,
+    SetMyCommands,
+    SetMyDefaultAdministratorRights,
+    SetGameScore,
+    StopMessageLiveLocation,
+    SendAnimation,
+    SendAudio,
+    SendDocument,
+    SendGame,
+    # SendInvoice,
+    # SendLocation,
+    # SendDice,
+    # SendVideoNote,
+    # SendVoice,
+    # SetChatPermissions,
+    # SendContact,
+    # SendVenue,
+    # SendPhoto,
+    # SendPoll,
 )
 from telegrambots.wrapper.types.objects import (
     ForceReply,
@@ -61,6 +89,15 @@ from telegrambots.wrapper.types.objects import (
     Message,
     GameHighScore,
     UserProfilePhotos,
+    BotCommand,
+    InputFile,
+    ChatPermissions,
+    ChatAdministratorRights,
+    # InputMediaAnimation,
+    # InputMediaAudio,
+    # InputMediaDocument,
+    # InputMediaPhoto,
+    # InputMediaVideo,
 )
 
 
@@ -1115,3 +1152,564 @@ class TelegramBot(TelegramBotsClient):
                 can_promote_members=can_promote_members,
             )
         )
+
+    # generate method for RestrictChatMember
+    async def restrict_chat_member(
+        self,
+        chat_id: int | str,
+        user_id: int,
+        permissions: ChatPermissions,
+        until_date: Optional[int] = None,
+    ):
+        """Use this method to restrict a user in a supergroup. The bot must be an administrator in the supergroup for this to work and must have the appropriate admin rights. Pass True for all boolean parameters to lift restrictions from a user. Returns True on success.
+
+        Args:
+            chat_id (`int` | `str`): Unique identifier for the target chat or username of the target supergroup (in the format @supergroupusername).
+            user_id (`int`): Unique identifier of the target user.
+            permissions (`ChatPermissions`): New user permissions.
+            until_date (`int`, optional): Date when restrictions will be lifted for the user, unix time. If user is restricted for more than 366 days or less than 30 seconds from the current time, they are considered to be restricted forever.
+        """
+        return await self(
+            RestrictChatMember(
+                chat_id=chat_id,
+                user_id=user_id,
+                permissions=permissions,
+                until_date=until_date,
+            )
+        )
+
+    # generate method for RevokeChatInviteLink
+    async def revoke_chat_invite_link(self, chat_id: int | str, invite_link: str):
+        """Use this method to revoke a link from a supergroup or a channel. The bot must be an administrator in the chat for this to work and must have the appropriate admin rights. Returns True on success.
+
+        Args:
+            chat_id (`int` | `str`): Unique identifier for the target chat or username of the target channel (in the format @channelusername).
+        """
+        return await self(
+            RevokeChatInviteLink(chat_id=chat_id, invite_link=invite_link)
+        )
+
+    # generate method for SendChatAction
+    async def send_chat_action(self, chat_id: int | str, action: str):
+        """Use this method when you need to tell the user that something is happening on the bot's side. The status is set for 5 seconds or less (when a message arrives from your bot, Telegram clients clear its typing status). Returns True on success.
+
+        Args:
+            chat_id (`int` | `str`): Unique identifier for the target chat or username of the target channel (in the format @channelusername).
+            action (`ChatAction`): Type of action to broadcast.
+        """
+        return await self(SendChatAction(chat_id=chat_id, action=action))
+
+    # generate method for SendMediaGroup
+    async def send_media_group(
+        self,
+        chat_id: int | str,
+        media: list[InputMedia],
+        disable_notification: Optional[bool] = None,
+        protect_content: Optional[bool] = None,
+        reply_to_message_id: Optional[int] = None,
+        allow_sending_without_reply: Optional[bool] = None,
+    ) -> list[Message]:
+        """Use this method to send a group of photos or videos as an album. On success, an array of the sent Messages is returned.
+
+        Args:
+            chat_id (`int` | `str`): Unique identifier for the target chat or username of the target channel (in the format @channelusername).
+            media (`list`): A JSON-serialized array describing photos and videos to be sent, must include 2–10 items.
+            disable_notification (`bool`, optional): Sends the messages silently. Users will receive a notification with no sound.
+            protect_content (`bool`, optional): If True, content of the messages will be protected against deletion.
+            reply_to_message_id (`int`, optional): If the messages are a reply, ID of the original message.
+            allow_sending_without_reply (`bool`, optional): Pass True, if the message should be sent even if the specified replied-to message is not found
+        """
+        return await self(
+            SendMediaGroup(
+                chat_id=chat_id,
+                media=media,  # type: ignore
+                disable_notification=disable_notification,
+                protect_content=protect_content,
+                reply_to_message_id=reply_to_message_id,
+                allow_sending_without_reply=allow_sending_without_reply,
+            )
+        )
+
+    # generate method for SendSticker
+    async def send_sticker(
+        self,
+        chat_id: int | str,
+        sticker: InputFile,
+        disable_notification: Optional[bool] = None,
+        protect_content: Optional[bool] = None,
+        reply_to_message_id: Optional[int] = None,
+        allow_sending_without_reply: Optional[bool] = None,
+        reply_markup: Optional[
+            Union[
+                InlineKeyboardMarkup,
+                ReplyKeyboardMarkup,
+                ReplyKeyboardRemove,
+                ForceReply,
+            ]
+        ] = None,
+    ):
+        """Use this method to send static .WEBP or animated .TGS stickers. On success, the sent Message is returned.
+
+        Args:
+            chat_id (`int` | `str`): Unique identifier for the target chat or username of the target channel (in the format @channelusername).
+            sticker (`InputFile`): Sticker to send.
+            disable_notification (`bool`, optional): Sends the message silently. Users will receive a notification with no sound.
+            protect_content (`bool`, optional): If True, content of the messages will be protected against deletion.
+            reply_to_message_id (`int`, optional): If the message is a reply, ID of the original message.
+            reply_markup (`InlineKeyboardMarkup` | `ReplyKeyboardMarkup` | `ReplyKeyboardRemove` | `ForceReply`, optional): Additional interface options. A JSON-serialized object for an inline keyboard, custom reply keyboard, instructions to remove reply keyboard or to force a reply from the user.
+            allow_sending_without_reply (`bool`, optional): Pass True, if the message should be sent even if the specified replied-to message is not found
+        """
+        return await self(
+            SendSticker(
+                chat_id=chat_id,
+                sticker=sticker,
+                disable_notification=disable_notification,
+                protect_content=protect_content,
+                reply_to_message_id=reply_to_message_id,
+                allow_sending_without_reply=allow_sending_without_reply,
+                reply_markup=reply_markup,
+            )
+        )
+
+    # generate method for SendVideo
+    async def send_video(
+        self,
+        chat_id: int | str,
+        video: InputFile,
+        duration: Optional[int] = None,
+        width: Optional[int] = None,
+        height: Optional[int] = None,
+        caption: Optional[str] = None,
+        caption_entities: Optional[list[MessageEntity]] = None,
+        disable_notification: Optional[bool] = None,
+        protect_content: Optional[bool] = None,
+        reply_to_message_id: Optional[int] = None,
+        allow_sending_without_reply: Optional[bool] = None,
+        reply_markup: Optional[
+            Union[
+                InlineKeyboardMarkup,
+                ReplyKeyboardMarkup,
+                ReplyKeyboardRemove,
+                ForceReply,
+            ]
+        ] = None,
+    ):
+        """Use this method to send video files, Telegram clients support mp4 videos (other formats may be sent as Document). On success, the sent Message is returned. Bots can currently send video files of up to 50 MB in size, this limit may be changed in the future.
+
+        Args:
+            chat_id (`int` | `str`): Unique identifier for the target chat or username of the target channel (in the format @channelusername).
+            video (`InputFile`): Video to send.
+            duration (`int`, optional): Duration of sent video in seconds.
+            width (`int`, optional): Video width.
+            height (`int`, optional): Video height.
+            caption (`str`, optional): Video caption (may also be used when resending videos by file_id), 0-200 characters.
+            caption_entities (`list`, optional): List of special entities that appear in the caption, which can be specified instead of using parse_mode.
+            disable_notification (`bool`, optional): Sends the message silently. Users will receive a notification with no sound.
+            protect_content (`bool`, optional): If True, content of the messages will be protected against deletion.
+            reply_to_message_id (`int`, optional): If the message is a reply, ID of the original message.
+            allow_sending_without_reply (`bool`, optional): Pass True, if the message should be sent even if the specified replied-to message is not found
+            reply_markup (`InlineKeyboardMarkup` | `ReplyKeyboardMarkup` | `ReplyKeyboardRemove` | `ForceReply`, optional): Additional interface options. A JSON-serialized object for an inline keyboard, custom reply keyboard, instructions to remove reply keyboard or to force a reply from the user.
+        """
+        return await self(
+            SendVideo(
+                chat_id=chat_id,
+                video=video,
+                duration=duration,
+                width=width,
+                height=height,
+                caption=caption,
+                caption_entities=caption_entities,
+                disable_notification=disable_notification,
+                protect_content=protect_content,
+                reply_to_message_id=reply_to_message_id,
+                allow_sending_without_reply=allow_sending_without_reply,
+                reply_markup=reply_markup,
+            )
+        )
+
+    # generate method for SetChatDescription
+    async def set_chat_description(self, chat_id: int | str, description: str):
+        """Use this method to change the description of a supergroup or a channel. The bot must be an administrator in the chat for this to work and must have the appropriate admin rights. Returns True on success.
+
+        Args:
+            chat_id (`int` | `str`): Unique identifier for the target chat or username of the target channel (in the format @channelusername).
+            description (`str`): New chat description, 0-255 characters.
+        """
+        return await self(SetChatDescription(chat_id=chat_id, description=description))
+
+    # generate method for SetChatPhoto
+    async def set_chat_photo(self, chat_id: int | str, photo: InputFile):
+        """Use this method to set a new profile photo for the chat. Photos can't be changed for private chats. The bot must be an administrator in the chat for this to work and must have the appropriate admin rights. Returns True on success.
+
+        Args:
+            chat_id (`int` | `str`): Unique identifier for the target chat or username of the target channel (in the format @channelusername).
+            photo (`InputFile`): New chat photo, uploaded using multipart/form-data.
+        """
+        return await self(SetChatPhoto(chat_id=chat_id, photo=photo))
+
+    # generate method for SetChatStickerSet
+    async def set_chat_sticker_set(self, chat_id: int | str, sticker_set_name: str):
+        """Use this method to change the sticker set of a supergroup. The bot must be an administrator in the chat for this to work and must have the appropriate admin rights. Use the field can_set_sticker_set optionally returned in getChat requests to check if the bot can use this method. Returns True on success.
+
+        Args:
+            chat_id (`int` | `str`): Unique identifier for the target chat or username of the target channel (in the format @channelusername).
+            sticker_set_name (`str`): New value of the chat sticker set.
+        """
+        return await self(
+            SetChatStickerSet(chat_id=chat_id, sticker_set_name=sticker_set_name)
+        )
+
+    # generate method for SetChatTitle
+    async def set_chat_title(self, chat_id: int | str, title: str):
+        """Use this method to change the title of a chat. Titles can't be changed for private chats. The bot must be an administrator in the chat for this to work and must have the appropriate admin rights. Returns True on success.
+
+        Args:
+            chat_id (`int` | `str`): Unique identifier for the target chat or username of the target channel (in the format @channelusername).
+            title (`str`): New chat title, 1-255 characters.
+        """
+        return await self(SetChatTitle(chat_id=chat_id, title=title))
+
+    # generate method for SetMyCommands
+    async def set_my_commands(self, commands: list[BotCommand]):
+        """Use this method to change the list of the bot's commands. Returns True on success.
+
+        Args:
+            commands (`List[BotCommand]`): New list of bot commands.
+        """
+        return await self(SetMyCommands(commands=commands))
+
+    # generate method for SetMyDefaultAdministratorRights
+    async def set_my_default_administrator_rights(
+        self,
+        rights: Optional[ChatAdministratorRights] = None,
+        for_channels: Optional[bool] = None,
+    ):
+        """Use this method to set default custom title for all administrators. Returns True on success.
+
+        Args:
+            rights (`ChatAdministratorRights`, optional): New default chat administrator privileges.
+            for_channels (`bool`, optional): Pass True, if the administrator can change chat title, photo and other settings.
+        """
+        return await self(
+            SetMyDefaultAdministratorRights(
+                rights=rights,
+                for_channels=for_channels,
+            )
+        )
+
+    # generate method for SetGameScore
+    async def set_game_score(
+        self,
+        chat_id: int,
+        message_id: int,
+        user_id: int,
+        score: int,
+        force: Optional[bool] = None,
+        disable_edit_message: Optional[bool] = None,
+    ):
+        """Use this method to set the score of the specified user in a game. On success, if the message was sent by the bot, returns the edited Message, otherwise returns True. Returns an error, if the new score is not greater than the user's current score in the chat and force is False.
+
+        Args:
+            user_id (`int`): User identifier.
+            score (`int`): New score, must be non-negative.
+            force (`bool`, optional): Pass True, if the high score is allowed to decrease. This can be useful when fixing mistakes or banning cheaters.
+            disable_edit_message (`bool`, optional): Pass True, if the game message should not be automatically edited to include the current scoreboard.
+            chat_id (`int`, optional): Required if inline_message_id is not specified. Unique identifier for the target chat.
+            message_id (`int`, optional): Required if inline_message_id is not specified. Identifier of the sent message.
+        """
+        return await self(
+            SetGameScore(
+                user_id=user_id,
+                score=score,
+                force=force,
+                disable_edit_message=disable_edit_message,
+                chat_id=chat_id,
+                message_id=message_id,
+            )
+        )
+
+    async def set_inline_game_score(
+        self,
+        inline_message_id: str,
+        user_id: int,
+        score: int,
+        force: Optional[bool] = None,
+        disable_edit_message: Optional[bool] = None,
+    ):
+        """Use this method to set the score of the specified user in a game. On success, if the message was sent by the bot, returns the edited Message, otherwise returns True. Returns an error, if the new score is not greater than the user's current score in the chat and force is False.
+
+        Args:
+            user_id (`int`): User identifier.
+            score (`int`): New score, must be non-negative.
+            force (`bool`, optional): Pass True, if the high score is allowed to decrease. This can be useful when fixing mistakes or banning cheaters.
+            disable_edit_message (`bool`, optional): Pass True, if the game message should not be automatically edited to include the current scoreboard.
+            inline_message_id (`str`, optional): Required if chat_id and message_id are not specified. Identifier of the inline message.
+        """
+        return await self(
+            SetGameScore(
+                user_id=user_id,
+                score=score,
+                force=force,
+                disable_edit_message=disable_edit_message,
+                inline_message_id=inline_message_id,
+            )
+        )
+
+    # generate method for StopMessageLiveLocation
+    async def stop_message_live_location(
+        self,
+        chat_id: int | str,
+        message_id: int,
+    ):
+        """Use this method to stop updating a live location message before live_period expires. On success, if the message was sent by the bot, returns the edited Message, otherwise returns True.
+
+        Args:
+            chat_id (`int` | `str`): Required if inline_message_id is not specified. Unique identifier for the target chat or username of the target channel (in the format @channelusername).
+            message_id (`int`): Required if inline_message_id is not specified. Identifier of the sent message.
+        """
+        return await self(
+            StopMessageLiveLocation(
+                chat_id=chat_id,
+                message_id=message_id,
+            )
+        )
+
+    async def stop_inline_message_live_location(
+        self,
+        inline_message_id: str,
+    ):
+        """Use this method to stop updating a live location message before live_period expires. On success, if the message was sent by the bot, returns the edited Message, otherwise returns True.
+
+        Args:
+            inline_message_id (`str`): Required if chat_id and message_id are not specified. Identifier of the inline message.
+        """
+        return await self(
+            StopMessageLiveLocation(
+                inline_message_id=inline_message_id,
+            )
+        )
+
+    # generate method for SendAnimation
+    async def send_animation(
+        self,
+        chat_id: Union[int, str],
+        animation: Union[InputFile, str],
+        duration: Optional[int] = None,
+        width: Optional[int] = None,
+        height: Optional[int] = None,
+        caption: Optional[str] = None,
+        caption_entities: Optional[list[MessageEntity]] = None,
+        parse_mode: Optional[str] = None,
+        disable_notification: Optional[bool] = None,
+        protect_content: Optional[bool] = None,
+        reply_to_message_id: Optional[int] = None,
+        allow_sending_without_reply: Optional[bool] = None,
+        reply_markup: Optional[
+            Union[
+                InlineKeyboardMarkup,
+                ReplyKeyboardMarkup,
+                ReplyKeyboardRemove,
+                ForceReply,
+            ]
+        ] = None,
+    ):
+        """Use this method to send animation files (GIF or H.264/MPEG-4 AVC video without sound). On success, the sent Message is returned. Bots can currently send animation files of up to 50 MB in size, this limit may be changed in the future.
+
+        Args:
+            chat_id (`int` | `str`): Unique identifier for the target chat or username of the target channel (in the format @channelusername).
+            animation (`InputFile` | `str`): Animation to send. Pass a file_id as String to send an animation that exists on the Telegram servers (recommended), pass an HTTP URL as a String for Telegram to get an animation from the Internet, or upload a new animation using multipart/form-data. More info on Sending Files ».
+            duration (`int`, optional): Duration of sent animation in seconds.
+            width (`int`, optional): Animation width.
+            height (`int`, optional): Animation height.
+            caption (`str`, optional): Animation caption (may also be used when resending animation by file_id).
+            caption_entities (`list[MessageEntity]`, optional): List of special entities that appear in the caption, which can be specified instead of parse_mode.
+            parse_mode (`str`, optional): Send Markdown or HTML, if you want Telegram apps to show bold, italic, fixed-width text or inline URLs in the media caption.
+            disable_notification (`bool`, optional): Sends the message silently. Users will receive a notification with no sound.
+            protect_content (`bool`, optional): If True, the content of the message cannot be edited.
+            reply_to_message_id (`int`, optional): If the message is a reply, ID of
+            allow_sending_without_reply (`bool`, optional): If set to True,
+            the original message.
+            reply_markup (`InlineKeyboardMarkup` | `ReplyKeyboardMarkup` | `ReplyKeyboardRemove` | `ForceReply`, optional): Additional interface options. A JSON-serialized object for an inline keyboard, custom reply keyboard, instructions to remove reply keyboard or to force a reply from the user.
+        """
+        return await self(
+            SendAnimation(
+                chat_id=chat_id,
+                animation=animation,
+                duration=duration,
+                width=width,
+                height=height,
+                caption=caption,
+                caption_entities=caption_entities,
+                parse_mode=parse_mode,
+                disable_notification=disable_notification,
+                protect_content=protect_content,
+                reply_to_message_id=reply_to_message_id,
+                allow_sending_without_reply=allow_sending_without_reply,
+                reply_markup=reply_markup,
+            )
+        )
+
+    # generate method for SendAudio
+    async def send_audio(
+        self,
+        chat_id: Union[int, str],
+        audio: Union[InputFile, str],
+        caption: Optional[str] = None,
+        caption_entities: Optional[list[MessageEntity]] = None,
+        parse_mode: Optional[str] = None,
+        duration: Optional[int] = None,
+        performer: Optional[str] = None,
+        title: Optional[str] = None,
+        thumb: Optional[Union[InputFile, str]] = None,
+        disable_notification: Optional[bool] = None,
+        protect_content: Optional[bool] = None,
+        reply_to_message_id: Optional[int] = None,
+        allow_sending_without_reply: Optional[bool] = None,
+        reply_markup: Optional[
+            Union[
+                InlineKeyboardMarkup,
+                ReplyKeyboardMarkup,
+                ReplyKeyboardRemove,
+                ForceReply,
+            ]
+        ] = None,
+    ):
+        """Use this method to send audio files, if you want Telegram clients to display the file as a playable voice message. For this to work, your audio must be in an .ogg file encoded with OPUS (other formats may be sent as Audio or Document). On success, the sent Message is returned. Bots can currently send voice messages of up to 50 MB in size, this limit may be changed in the future.
+
+        Args:
+            chat_id (`int` | `str`): Unique identifier for the target chat or username of the target channel (in the format @channelusername).
+            audio (`InputFile` | `str`): Audio file to send. Pass a file_id as String to send an audio file that exists on the Telegram servers (recommended), pass an HTTP URL as a String for Telegram to get an audio file from the Internet, or upload a new one using multipart/form-data. More info on Sending Files ».
+            caption (`str`, optional): Audio caption, 0-200 characters.
+            caption_entities (`list[MessageEntity]`, optional): List of special entities that appear in the caption, which can be specified instead of parse_mode.
+            parse_mode (`str`, optional): Send Markdown or HTML, if you want Telegram apps to show bold, italic, fixed-width text or inline URLs in the media caption.
+            duration (`int`, optional): Duration of the audio in seconds.
+            performer (`str`, optional): Performer.
+            title (`str`, optional): Track name.
+            thumb (`InputFile` | `str`, optional ): Thumbnail of the file sent. The thumbnail should be in JPEG format and less than 200 KB in size. A thumbnail‘s width and height should not exceed 90. Ignored if the file is not uploaded using multipart/form-data. Thumbnails can’t be reused and can be only uploaded as a new file, so you can pass “attach://<file_attach_name>” if the thumbnail was uploaded using multipart/form-data under <file_attach_name>. More info on Sending Files ».
+            disable_notification (`bool`, optional): Sends the message silently. Users will receive a notification with no sound.
+            protect_content (`bool`, optional): If True, the content of the message will be protected against deletion.
+            reply_to_message_id (`int`, optional): If the message is a reply, ID of the original message.
+            allow_sending_without_reply (`bool`, optional): If the message is a reply, ID of the original message.
+            reply_markup (`InlineKeyboardMarkup` | `ReplyKeyboardMarkup` | `ReplyKeyboardRemove` | `ForceReply`, optional): Additional interface options. A JSON-serialized object for an inline keyboard, custom reply keyboard, instructions to remove reply keyboard or to force a reply from the user.
+        """
+        return await self(
+            SendAudio(
+                chat_id=chat_id,
+                audio=audio,
+                caption=caption,
+                caption_entities=caption_entities,
+                parse_mode=parse_mode,
+                duration=duration,
+                performer=performer,
+                title=title,
+                thumb=thumb,
+                disable_notification=disable_notification,
+                protect_content=protect_content,
+                reply_to_message_id=reply_to_message_id,
+                allow_sending_without_reply=allow_sending_without_reply,
+                reply_markup=reply_markup,
+            )
+        )
+
+    # generate method for SendDocument
+    async def send_document(
+        self,
+        chat_id: Union[int, str],
+        document: Union[InputFile, str],
+        thumb: Optional[Union[InputFile, str]] = None,
+        caption: Optional[str] = None,
+        caption_entities: Optional[list[MessageEntity]] = None,
+        disable_content_type_detection: Optional[bool] = None,
+        parse_mode: Optional[str] = None,
+        disable_notification: Optional[bool] = None,
+        protect_content: Optional[bool] = None,
+        reply_to_message_id: Optional[int] = None,
+        allow_sending_without_reply: Optional[bool] = None,
+        reply_markup: Optional[
+            Union[
+                InlineKeyboardMarkup,
+                ReplyKeyboardMarkup,
+                ReplyKeyboardRemove,
+                ForceReply,
+            ]
+        ] = None,
+    ):
+        """Use this method to send general files. On success, the sent Message is returned. Bots can currently send files of any type of up to 50 MB in size.
+
+        Args:
+            chat_id (`int` | `str`): Unique identifier for the target chat or username of the target channel (in the format @channelusername).
+            document (`InputFile` | `str`): File to send. Pass a file_id as String to send a file that exists on the Telegram servers (recommended), pass an HTTP URL as a String for Telegram to get a file from the Internet, or upload a new one using multipart/form-data. More info on Sending Files ».
+            thumb (`InputFile` | `str`, optional): Thumbnail of the file sent. The thumbnail should be in JPEG format and less than 200 KB in size. A thumbnail‘s width and height should not exceed 90. Ignored if the file is not uploaded using multipart/form-data. Thumbnails can’t be reused and can be only uploaded as a new file, so you can pass “attach://<file_attach_name>” if the thumbnail was uploaded using multipart/form-data under <file_attach_name>. More info on Sending Files ».
+            caption (`str`, optional): Document caption (may also be used when resending documents by file_id), 0-200 characters.
+            caption_entities (`list[MessageEntity]`, optional): List of special entities that appear in the caption, which can be specified instead of parse_mode.
+            disable_content_type_detection (`bool`, optional): Disables automatic server-side content type detection for files uploaded using multipart/form-data.
+            parse_mode (`str`, optional): Send Markdown or HTML, if you want Telegram apps to show bold, italic, fixed-width text or inline URLs in the media caption.
+            disable_notification (`bool`, optional): Sends the message silently. Users will receive a notification with no sound.
+            protect_content (`bool`, optional): If True, the content of the message will be protected against deletion.
+            reply_to_message_id (`int`, optional): If the message is a reply, ID of the original message.
+            allow_sending_without_reply (`bool`, optional): If the message is a reply, ID of the original message.
+            reply_markup (`InlineKeyboardMarkup` | `ReplyKeyboardMarkup` | `ReplyKeyboardRemove` | `ForceReply`, optional): Additional interface options. A JSON-serialized object for an inline keyboard, custom reply keyboard, instructions to remove reply keyboard or to force a reply from the user.
+        """
+        return await self(
+            SendDocument(
+                chat_id=chat_id,
+                document=document,
+                thumb=thumb,
+                caption=caption,
+                parse_mode=parse_mode,
+                caption_entities=caption_entities,
+                disable_notification=disable_notification,
+                disable_content_type_detection=disable_content_type_detection,
+                protect_content=protect_content,
+                reply_to_message_id=reply_to_message_id,
+                allow_sending_without_reply=allow_sending_without_reply,
+                reply_markup=reply_markup,
+            )
+        )
+
+    # generate method for SendGame
+    async def send_game(
+        self,
+        chat_id: int,
+        game_short_name: str,
+        disable_notification: Optional[bool] = None,
+        protect_content: Optional[bool] = None,
+        reply_to_message_id: Optional[int] = None,
+        allow_sending_without_reply: Optional[bool] = None,
+        inline_keyboard_markup: Optional[InlineKeyboardMarkup] = None,
+    ) -> Message:
+        """Use this method to send a game. On success, the sent Message is returned.
+
+        Args:
+            chat_id (`int` | `str`): Unique identifier for the target chat or username of the target channel (in the format @channelusername).
+            game_short_name (`str`): Short name of the game, serves as the unique identifier for the game. Set up your games via Botfather.
+            disable_notification (`bool`, optional): Sends the message silently. Users will receive a notification with no sound.
+            protect_content (`bool`, optional): If True, the content of the message will be protected against deletion.
+            reply_to_message_id (`int`, optional): If the message is a reply, ID of the original message.
+            allow_sending_without_reply (`bool`, optional): If the message is a reply, ID of the original message.
+            reply_markup (`InlineKeyboardMarkup` | `ReplyKeyboardMarkup` | `ReplyKeyboardRemove` | `ForceReply`, optional): Additional interface options. A JSON-serialized object for an inline keyboard, custom reply keyboard, instructions to remove reply keyboard or to force a reply from the user.
+        """
+
+        return await self(
+            SendGame(
+                chat_id=chat_id,
+                game_short_name=game_short_name,
+                disable_notification=disable_notification,
+                protect_content=protect_content,
+                reply_to_message_id=reply_to_message_id,
+                allow_sending_without_reply=allow_sending_without_reply,
+                reply_markup=inline_keyboard_markup,
+            )
+        )
+
+    # generate method for SendInvoice
+    # generate method for SendLocation
+    # generate method for SendMediaGroup
+    # generate method for SendDice
+    # generate method for SendVideoNote
+    # generate method for SendVoice
+    # generate method for SetChatPermissions
+    # generate method for SendContact
+    # generate method for SendVenue
+    # generate method for SendPhoto
+    # generate method for SendPoll
