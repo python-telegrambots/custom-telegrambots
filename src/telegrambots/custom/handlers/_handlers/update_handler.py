@@ -1,4 +1,4 @@
-from typing import Any, Callable, Coroutine, final
+from typing import Any, Callable, Coroutine, Optional, final
 
 from telegrambots.wrapper.types.objects import CallbackQuery, Message, Update
 
@@ -13,19 +13,41 @@ class MessageHandler(GenericHandler[Message]):
         self,
         _processor: Callable[[MessageContext], Coroutine[Any, Any, None]],
         _filter: Filter[Message],
+        continue_after: Optional[str] = None,
     ) -> None:
         super().__init__(_filter)
         self._processor = _processor
+        self._continue_after = continue_after
 
     @final
     def __extractor__(self, update: Update):
-        return update.message
+        v = update.message
+        if v is None:
+            raise ValueError("Update is not a message")
+        return v
 
     @final
-    async def _process(self, context: GenericContext[Message]):
+    async def _process(
+        self, context: GenericContext[Message], *args: Any, **kwargs: Any
+    ):
         return await self._processor(
-            MessageContext(context.bot, context.wrapper_update)
+            MessageContext(
+                context.dp,
+                context.wrapper_update,
+                context.handler_tag,
+            ),
+            *args,
+            **kwargs,
         )
+
+    @property
+    def update_type(self) -> type[Any]:
+        return Message
+
+    @final
+    @property
+    def continue_after(self) -> Optional[str]:
+        return self._continue_after
 
 
 class CallbackQueryHandler(GenericHandler[CallbackQuery]):
@@ -33,16 +55,36 @@ class CallbackQueryHandler(GenericHandler[CallbackQuery]):
         self,
         _processor: Callable[[CallbackQueryContext], Coroutine[Any, Any, None]],
         _filter: Filter[CallbackQuery],
+        continue_after: Optional[str] = None,
     ) -> None:
         super().__init__(_filter)
         self._processor = _processor
+        self._continue_after = continue_after
 
     @final
     def __extractor__(self, update: Update):
-        return update.callback_query
+        c = update.callback_query
+        if c is None:
+            raise ValueError("Update is not a callback query")
+        return c
 
     @final
-    async def _process(self, context: GenericContext[CallbackQuery]):
+    async def _process(
+        self, context: GenericContext[CallbackQuery], *args: Any, **kwargs: Any
+    ):
         return await self._processor(
-            CallbackQueryContext(context.bot, context.wrapper_update)
+            CallbackQueryContext(
+                context.dp, context.wrapper_update, context.handler_tag
+            ),
+            *args,
+            **kwargs,
         )
+
+    @property
+    def update_type(self) -> type[Any]:
+        return CallbackQuery
+
+    @final
+    @property
+    def continue_after(self) -> Optional[str]:
+        return self._continue_after

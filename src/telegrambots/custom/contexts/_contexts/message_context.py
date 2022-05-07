@@ -1,4 +1,4 @@
-from typing import Optional, final
+from typing import Optional, final, TYPE_CHECKING
 
 from telegrambots.wrapper.types.objects import (
     Message,
@@ -10,17 +10,24 @@ from telegrambots.wrapper.types.objects import (
     ForceReply,
 )
 
-from ...client import TelegramBot
 from .context_template import GenericContext
+
+if TYPE_CHECKING:
+    from ...dispatcher import Dispatcher
 
 
 class MessageContext(GenericContext[Message]):
-    def __init__(self, bot: TelegramBot, update: Update) -> None:
-        super().__init__(bot, update)
+    def __init__(self, dp: "Dispatcher", update: Update, handler_tag: str) -> None:
+        super().__init__(
+            dp, update=update, update_type=Message, handler_tag=handler_tag
+        )
 
     @final
-    def __extractor__(self, update: Update) -> Optional[Message]:
-        return update.message
+    def __extractor__(self, update: Update) -> Message:
+        m = update.message
+        if m is not None:
+            return m
+        raise ValueError("Update has no message")
 
     @final
     async def reply_text(

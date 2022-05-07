@@ -160,4 +160,124 @@ def regex(pattern: str | re.Pattern[str]):
 #    ...
 ```
 
-...
+### Let have some fun
+
+So, it's a happy day and you're creating a new handler to receive some info from user.
+
+Here's how you do it to get user's name ( as before ).
+
+``` py
+
+# ---- sniff ----
+
+@dp.register_message_handler(mf.regex("^/start") & mf.private)
+async def handle_message(
+    context: MessageContext,
+):  # -> async callback function to handle update
+    await context.reply_text("Please gimme you name ...")
+
+```
+
+This is where you may go deep thinking ... Where should i get that name ?
+
+Maybe you need another handler to receive what user sends after.
+
+``` py
+
+# ---- sniff ----
+
+@dp.register_message_handler(mf.regex("^/give") & mf.private)
+async def handle_message(
+    context: MessageContext,
+):  # -> async callback function to handle update
+    await context.reply_text("Please gimme you name ...")
+
+
+@dp.register_message_handler(mf.text_message & mf.private)
+async def gimme_name(
+    context: MessageContext,
+):  # -> async callback function to handle update
+    await context.reply_text(f"Then your name is {context.update.text}!")
+
+```
+
+But this is not right, is it?
+
+- How do we know the text message is related to `/give` command ?
+- The second handler is called on every text message!
+- ...
+
+So you need a way to keep track of a user, right?
+
+Here's where this package mages!!
+
+You can use `@context.continue_with_this_message` decorator inside your handler.
+
+It's much likely similar to `@dp.register_message_handler`, except it takes one more parameter before filter. And it's a `key_resolver`.
+
+Key resolver helps us know "what should we track?" in this case it's user's id from message.
+
+Let's get to work:
+
+``` py
+@dp.register_message_handler(mf.regex("^/give") & mf.private)
+async def handle_message(
+    context: MessageContext,
+):  # -> async callback function to handle update
+    await context.reply_text("Please gimme you name ...")
+
+    if context.update.from_user: # make sure the message has a user to track the id.
+
+        @context.continue_with_this_message( # this is the actual mage! it make these two handlers related to each other.
+            key_resolver=MessageSenderId(context.update.from_user.id), # keep track of user using it's unique id.
+            filter=mf.text_message & mf.private, # any text message is ok here!
+            tag="give_name", # It's optional! you can name the function below instead.
+        )
+        async def _(context: MessageContext):
+            # Now you're 100% sure that this callback function is called only after a call to parent callback "handle_message".
+            # Then it's what you actually want.
+            await context.reply_text(f"Ahh, your name is {context.update.text}!")
+
+```
+
+Amazing ? it's not finished yet!
+
+What if you need another info? like user's age? NO PROBLEM! repeat what you did before.
+
+``` py
+@dp.register_message_handler(mf.regex("^/give") & mf.private)
+async def handle_message(
+    context: MessageContext,
+):  # -> async callback function to handle update
+    await context.reply_text("Please gimme you name ...")
+
+    if context.update.from_user: 
+
+        @context.continue_with_this_message(
+            key_resolver=MessageSenderId(context.update.from_user.id),
+            filter=mf.text_message & mf.private,
+            tag="give_name"
+        )
+        async def _(context: MessageContext):
+            await context.reply_text(f"Ahh, your name is {context.update.text}!")
+            
+            # ---- new code ----
+            # Let's ask for user's age
+            await context.reply_text(f"What's your age then?")
+
+            if context.update.from_user:
+
+                # Again
+                @context.continue_with_this_message(
+                    key_resolver=MessageSenderId(context.update.from_user.id),
+                    filter=mf.text_message & mf.private,
+                    tag="give_age", # Another name, it's important!
+                    name=context.update.text,  # -> you can pass custom data to handler. they're available in callback's *args or **kwargs.
+                )
+                async def _(context: MessageContext, *args: Any, **kwargs: Any):
+                    await context.reply_text(
+                        f"So {kwargs['name']}, your age is {context.update.text}!"
+                    )
+```
+
+_Are you excited now?_

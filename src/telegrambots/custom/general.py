@@ -4,11 +4,12 @@ from typing import Generic, Optional, TypeVar
 from telegrambots.wrapper.types.objects import Update
 
 TUpdate = TypeVar("TUpdate")
+TKey = TypeVar("TKey")
 
 
 class Exctractable(Generic[TUpdate], ABC):
     @abstractmethod
-    def __extractor__(self, update: Update) -> Optional[TUpdate]:
+    def __extractor__(self, update: Update) -> TUpdate:
         ...
 
 
