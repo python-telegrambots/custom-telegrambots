@@ -32,8 +32,12 @@ class HandlerTemplate(metaclass=ABCMeta):
         ...
 
     @property
-    def continue_after(self) -> Optional[str]:
+    def continue_after(self) -> Optional[list[str]]:
         return None
+
+    @property
+    def priority(self) -> int:
+        return 0
 
     async def process(
         self,
@@ -95,17 +99,19 @@ class Handler(Generic[TUpdate], GenericHandler[TUpdate]):
         exctractor: Callable[[Update], Optional[TUpdate]],
         processor: Callable[[GenericContext[TUpdate]], Coroutine[Any, Any, None]],
         filter: Filter[TUpdate],
-        continue_after: Optional[str] = None,
+        continue_after: Optional[list[str]] = None,
+        priority: int = 0,
     ) -> None:
         super().__init__(filter)
         self._exctractor = exctractor
         self._processor = processor
         self._update_type = update_type
         self._continue_after = continue_after
+        self._priority = priority
 
     @final
     @property
-    def continue_after(self) -> Optional[str]:
+    def continue_after(self) -> Optional[list[str]]:
         return self._continue_after
 
     @final
@@ -124,3 +130,7 @@ class Handler(Generic[TUpdate], GenericHandler[TUpdate]):
     @property
     def update_type(self) -> type[TUpdate]:
         return self._update_type
+
+    @property
+    def priority(self) -> int:
+        return self._priority

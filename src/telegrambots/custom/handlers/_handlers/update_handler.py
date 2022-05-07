@@ -13,11 +13,13 @@ class MessageHandler(GenericHandler[Message]):
         self,
         _processor: Callable[[MessageContext], Coroutine[Any, Any, None]],
         _filter: Filter[Message],
-        continue_after: Optional[str] = None,
+        continue_after: Optional[list[str]] = None,
+        priority: int = 0,
     ) -> None:
         super().__init__(_filter)
         self._processor = _processor
         self._continue_after = continue_after
+        self._priority = priority
 
     @final
     def __extractor__(self, update: Update):
@@ -46,8 +48,12 @@ class MessageHandler(GenericHandler[Message]):
 
     @final
     @property
-    def continue_after(self) -> Optional[str]:
+    def continue_after(self) -> Optional[list[str]]:
         return self._continue_after
+
+    @property
+    def priority(self) -> int:
+        return self._priority
 
 
 class CallbackQueryHandler(GenericHandler[CallbackQuery]):
@@ -55,11 +61,13 @@ class CallbackQueryHandler(GenericHandler[CallbackQuery]):
         self,
         _processor: Callable[[CallbackQueryContext], Coroutine[Any, Any, None]],
         _filter: Filter[CallbackQuery],
-        continue_after: Optional[str] = None,
+        continue_after: Optional[list[str]] = None,
+        priority: int = 0,
     ) -> None:
         super().__init__(_filter)
         self._processor = _processor
         self._continue_after = continue_after
+        self._priority = priority
 
     @final
     def __extractor__(self, update: Update):
@@ -86,5 +94,9 @@ class CallbackQueryHandler(GenericHandler[CallbackQuery]):
 
     @final
     @property
-    def continue_after(self) -> Optional[str]:
+    def continue_after(self) -> Optional[list[str]]:
         return self._continue_after
+
+    @property
+    def priority(self) -> int:
+        return self._priority

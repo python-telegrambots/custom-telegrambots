@@ -7,6 +7,9 @@ from telegrambots.wrapper.types.objects import Message
 from ._filters.message_filters import message_filter_factory
 
 
+any_message = message_filter_factory(lambda _: True)
+
+
 text_message = message_filter_factory(lambda message: message.text is not None)
 """ Allows only text messages. """
 

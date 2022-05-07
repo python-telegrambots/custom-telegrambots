@@ -1,5 +1,6 @@
 import dataclasses
-from typing import Any, Callable, Coroutine, Optional
+import logging
+from typing import Any, Callable, Coroutine, Optional, overload
 
 from telegrambots.wrapper.types.objects import CallbackQuery, Message, Update
 
@@ -14,6 +15,9 @@ from .general import TUpdate
 from .handlers._handlers.handler_template import Handler, HandlerTemplate
 from .handlers._handlers.update_handler import CallbackQueryHandler, MessageHandler
 from .processor import ProcessorTemplate, SequentialProcessor
+
+
+dispatcher_logger = logging.getLogger("telegrambots.dispatcher")
 
 
 class Dispatcher:
@@ -36,7 +40,7 @@ class Dispatcher:
         """
         self._bot = _bot
         self._handlers: dict[type[Any], dict[str, HandlerTemplate]] = {}
-        self._continuously_handlers: list[ContinuouslyHandlerTemplate] = []
+        self._continuously_handlers: list[tuple[ContinuouslyHandlerTemplate]] = []
         self._handle_error = handle_error
 
         self._processor: ProcessorTemplate[Update]
@@ -56,6 +60,7 @@ class Dispatcher:
         Args:
             update (`Update`): The update to feed.
         """
+        dispatcher_logger.info(f"Feeding update {update}")
         await self._processor.process(update)
 
     def handler_tag_exists(self, tag: str, update_type: type[Any]):
@@ -69,13 +74,39 @@ class Dispatcher:
             return False
         return tag in self._handlers[update_type]
 
+    @overload
     def add_continuously_handler(
         self,
         continuously_handler: ContinuouslyHandlerTemplate,
     ):
         """Adds a handler for continuously updates."""
         ...
-        self._continuously_handlers.append(continuously_handler)
+
+    @overload
+    def add_continuously_handler(
+        self,
+        continuously_handler: tuple[ContinuouslyHandlerTemplate],
+    ):
+        """Adds a handler for continuously updates."""
+        ...
+
+    def add_continuously_handler(
+        self,
+        continuously_handler: ContinuouslyHandlerTemplate
+        | tuple[ContinuouslyHandlerTemplate],
+    ):
+        """Adds a handler for continuously updates."""
+
+        if isinstance(continuously_handler, (tuple, list)):
+            self._continuously_handlers.append(continuously_handler)
+            dispatcher_logger.info(
+                f"Added a batch of continuously handlers {', '.join(f'{x.update_type}:{x.target_tag}' for x in continuously_handler)}"
+            )
+        else:
+            dispatcher_logger.info(
+                f"Added a continuously handler: {continuously_handler.update_type}:{continuously_handler.target_tag}"
+            )
+            self._continuously_handlers.append((continuously_handler,))
 
     def add_handler(self, tag: str, handler: HandlerTemplate):
         """Adds a handler to the dispatcher.
@@ -85,19 +116,21 @@ class Dispatcher:
             handler (`HandlerTemplate`): The handler to add.
         """
         if handler.update_type not in self._handlers:
+            dispatcher_logger.info(f"Added handler batch for {handler.update_type}s")
             self._handlers[handler.update_type] = {}
 
         if tag in self._handlers[handler.update_type]:
             raise HandlerRegistered(tag, handler.update_type)
 
         self._handlers[handler.update_type][tag] = handler
+        dispatcher_logger.info(f"Added handler {handler.update_type}:{tag}")
 
     def add_callback_query_handler(
         self,
         tag: str,
         function: Callable[[CallbackQueryContext], Coroutine[Any, Any, None]],
         filter: Filter[CallbackQuery],
-        continue_after: Optional[str] = None,
+        continue_after: Optional[list[str]] = None,
     ):
         """Registers a handler for callback queries.
 
@@ -115,7 +148,7 @@ class Dispatcher:
         tag: str,
         function: Callable[[MessageContext], Coroutine[Any, Any, None]],
         filter: Filter[Message],
-        continue_after: Optional[str] = None,
+        continue_after: Optional[list[str]] = None,
     ):
         """Registers a handler for messages.
 
@@ -134,7 +167,7 @@ class Dispatcher:
         extractor: Callable[[Update], Optional[TUpdate]],
         filter: Filter[TUpdate],
         tag: Optional[str] = None,
-        continue_after: Optional[str] = None,
+        continue_after: Optional[list[str]] = None,
     ):
         """Registers a handler for updates.
 
@@ -160,7 +193,7 @@ class Dispatcher:
         self,
         filter: Filter[Message],
         tag: Optional[str] = None,
-        continue_after: Optional[str] = None,
+        continue_after: Optional[list[str]] = None,
     ):
         """Registers a handler for messages.
 
@@ -180,7 +213,7 @@ class Dispatcher:
         self,
         filter: Filter[CallbackQuery],
         tag: Optional[str] = None,
-        continue_after: Optional[str] = None,
+        continue_after: Optional[list[str]] = None,
     ):
         """Registers a handler for callback queries.
 
@@ -203,30 +236,38 @@ class Dispatcher:
         if update_type is None:
             await self._try_handle_error(ValueError(f"Unknown update type: {update}"))
 
-        for c in self._continuously_handlers:
-            if c.update_type == update_type:
-                if c.check_key(update):
-                    handler = self._handlers[update_type][c.target_tag]
+        for batch in self._continuously_handlers:
+            for c in sorted(batch, key=lambda x: x.priority, reverse=True):
+                if c.update_type == update_type:
+                    if c.check_key(update):
+                        handler = self._handlers[update_type][c.target_tag]
 
-                    if not handler.should_process(update):
-                        continue
-
-                    if handler.continue_after is not None:
-                        if c.start_tag != handler.continue_after:
+                        if not handler.should_process(update):
                             continue
 
-                    await self._do_handling(
-                        handler, update, c.target_tag, *c.args, **c.kwargs
-                    )
-                    self._continuously_handlers.remove(c)
-                    return  # Don't process the update anymore
+                        if handler.continue_after is not None:
+                            if c.start_tag not in handler.continue_after:
+                                continue
+
+                        dispatcher_logger.info(
+                            f"Processing continuously handler {c.update_type}:{c.target_tag}"
+                        )
+                        await self._do_handling(
+                            handler, update, c.target_tag, *c.args, **c.kwargs
+                        )
+                        self._continuously_handlers.remove(batch)
+                        return  # Don't process the update anymore
 
         if update_type not in self._handlers:
             return
 
-        for k, handler in (
+        for k, handler in sorted(
             (k, h)
-            for k, h in self._handlers[update_type].items()
+            for k, h in sorted(
+                self._handlers[update_type].items(),
+                key=lambda x: x[1].priority,
+                reverse=True,
+            )
             if not h.continue_after
         ):
             if handler.should_process(update):
