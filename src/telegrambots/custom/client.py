@@ -211,7 +211,7 @@ class TelegramBot(TelegramBotsClient):
 
         while True:
             updates = await self.get_updates(
-                offset, limit=100, timeout=300, allowed_updates=allowed_updates
+                offset, limit=100, timeout=290, allowed_updates=allowed_updates
             )
 
             for update in updates:

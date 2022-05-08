@@ -1,4 +1,3 @@
-import dataclasses
 import logging
 from typing import Any, Callable, Coroutine, Optional, overload
 
@@ -6,16 +5,15 @@ from telegrambots.wrapper.types.objects import CallbackQuery, Message, Update
 
 from .client import TelegramBot
 from .contexts import CallbackQueryContext, MessageContext
-from .contexts._contexts.context_template import GenericContext
 from .contexts._contexts._continuously_handler import ContinuouslyHandlerTemplate
-from .exceptions.propagations import BreakPropagation, ContinuePropagation
+from .contexts._contexts.context_template import GenericContext
 from .exceptions.handlers import HandlerRegistered
+from .exceptions.propagations import BreakPropagation, ContinuePropagation
 from .filters._filters.filter_template import Filter
 from .general import TUpdate
 from .handlers._handlers.handler_template import Handler, HandlerTemplate
 from .handlers._handlers.update_handler import CallbackQueryHandler, MessageHandler
 from .processor import ProcessorTemplate, SequentialProcessor
-
 
 dispatcher_logger = logging.getLogger("telegrambots.dispatcher")
 
@@ -232,14 +230,15 @@ class Dispatcher:
         return decorator
 
     async def _process_update(self, update: Update):
-        update_type = Dispatcher._resolve_update_type(update)
+        update_type = update.update_type
         if update_type is None:
             await self._try_handle_error(ValueError(f"Unknown update type: {update}"))
+            return
 
         for batch in self._continuously_handlers:
             for c in sorted(batch, key=lambda x: x.priority, reverse=True):
                 if c.update_type == update_type:
-                    if c.check_key(update):
+                    if c.check_keys(update):
                         handler = self._handlers[update_type][c.target_tag]
 
                         if not handler.should_process(update):
@@ -305,15 +304,3 @@ class Dispatcher:
     async def _try_handle_error(self, e: Exception):
         if self._handle_error is not None:
             await self._handle_error(self._bot, e)
-
-    @staticmethod
-    def _resolve_update_type(update: Update):
-        fields = dataclasses.fields(update)
-        for field in fields:
-            if field.name == "update_id":
-                continue
-
-            field_value = getattr(update, field.name)
-            if field_value is not None:
-                return field.metadata["ac_type"][0]
-        return None

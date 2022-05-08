@@ -5,6 +5,7 @@ from typing import (
     Generic,
     NoReturn,
     Optional,
+    Sequence,
     final,
     TYPE_CHECKING,
     Coroutine,
@@ -76,8 +77,7 @@ class ContextTemplate(metaclass=ABCMeta):
         self,
         target_tag: str,
         update_type: type[TUpdate],
-        resolve_update: Callable[[Update], Optional[TUpdate]],
-        key_resolver: AbstractKeyResolver[TUpdate, Any],
+        keys: Sequence[AbstractKeyResolver[TUpdate, Any]],
         priority: int = 0,
         *args: Any,
         **kwargs: Any,
@@ -86,20 +86,19 @@ class ContextTemplate(metaclass=ABCMeta):
         Continues the propagation of the current context, with another handler.
 
         Args:
-            target_tag (`str`): The tag of the handler to continue with.
-            update_type (`type`): The type of the update.
-            resolve_update (`Callable[[Update], TUpdate]`): A function that resolves the update.
-            resolve_key (`Callable[[TUpdate], TKey]`): A function that resolves the key.
-            priority (`int`): The priority of the handler.
-            key (`TKey`): The key to use.
+            target_tag (`str`): Tag of the target handler.
+            update_type (`type`): Type of the update.
+            keys (`list[AbstractKeyResolver[TUpdate, Any]]`): Keys to resolve.
+            priority (`int`): Priority of the handler.
+            args (`Any`): Arguments to pass to the handler.
+            kwargs (`Any`): Keyword arguments to pass to the handler.
         """
         self.dp.add_continuously_handler(
             ContinuouslyHandler(
                 target_tag,
                 self.handler_tag,
                 update_type,
-                resolve_update,
-                key_resolver,
+                keys,
                 priority,
                 *args,
                 **kwargs,
@@ -115,8 +114,7 @@ class ContextTemplate(metaclass=ABCMeta):
                     info.target_tag,
                     self.handler_tag,
                     info.update_type,
-                    info.resolve_update,
-                    info.key_resolver,
+                    info.keys,
                     info.priority,
                     *info.args,
                     **info.kwargs,
@@ -129,7 +127,7 @@ class ContextTemplate(metaclass=ABCMeta):
     def continue_with_message(
         self,
         target_tag: str,
-        key_resolver: AbstractKeyResolver[Message, Any],
+        keys: Sequence[AbstractKeyResolver[Message, Any]],
         priority: int = 0,
         *args: Any,
         **kwargs: Any,
@@ -137,8 +135,7 @@ class ContextTemplate(metaclass=ABCMeta):
         self.continue_with(
             target_tag,
             Message,
-            lambda x: x.message,
-            key_resolver,
+            keys,
             priority,
             *args,
             **kwargs,
@@ -147,7 +144,7 @@ class ContextTemplate(metaclass=ABCMeta):
     def continue_with_callback_query(
         self,
         target_tag: str,
-        key_resolver: AbstractKeyResolver[CallbackQuery, Any],
+        keys: Sequence[AbstractKeyResolver[CallbackQuery, Any]],
         priority: int = 0,
         *args: Any,
         **kwargs: Any,
@@ -155,8 +152,7 @@ class ContextTemplate(metaclass=ABCMeta):
         self.continue_with(
             target_tag,
             CallbackQuery,
-            lambda x: x.callback_query,
-            key_resolver,
+            keys,
             priority,
             *args,
             **kwargs,
@@ -164,41 +160,39 @@ class ContextTemplate(metaclass=ABCMeta):
 
     def continue_with_this_callback_query(
         self,
-        key_resolver: AbstractKeyResolver[CallbackQuery, Any],
+        keys: Sequence[AbstractKeyResolver[CallbackQuery, Any]],
         filter: "Filter[CallbackQuery]",
         tag: Optional[str] = None,
         *args: Any,
         **kwargs: Any,
     ):
         def decorator(
-            _function: Callable[
-                ["CallbackQueryContext", Any, Any], Coroutine[Any, Any, None]
-            ]
+            _function: Callable[["CallbackQueryContext"], Coroutine[Any, Any, None]]
         ):
             _tag = tag or _function.__name__
             if not self.dp.handler_tag_exists(_tag, CallbackQuery):
                 self.dp.add_callback_query_handler(
                     _tag, _function, filter, [self.handler_tag]  # type: ignore
                 )
-            self.continue_with_callback_query(_tag, key_resolver, *args, **kwargs)
+            self.continue_with_callback_query(_tag, keys, *args, **kwargs)
 
         return decorator
 
     def continue_with_this_message(
         self,
-        key_resolver: AbstractKeyResolver[Message, Any],
+        keys: list[AbstractKeyResolver[Message, Any]],
         filter: "Filter[Message]",
         tag: Optional[str] = None,
         *args: Any,
         **kwargs: Any,
     ):
         def decorator(
-            _function: Callable[["MessageContext", Any, Any], Coroutine[Any, Any, None]]
+            _function: Callable[["MessageContext"], Coroutine[Any, Any, None]]
         ):
             _tag = tag or _function.__name__
             if not self.dp.handler_tag_exists(_tag, Message):
                 self.dp.add_message_handler(_tag, _function, filter, [self.handler_tag])  # type: ignore
-            self.continue_with_message(_tag, key_resolver, *args, **kwargs)
+            self.continue_with_message(_tag, keys, *args, **kwargs)
 
         return decorator
 

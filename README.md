@@ -215,7 +215,7 @@ Here's where this package mages!!
 
 You can use `@context.continue_with_this_message` decorator inside your handler.
 
-It's much likely similar to `@dp.register_message_handler`, except it takes one more parameter before filter. And it's a `key_resolver`.
+It's much likely similar to `@dp.register_message_handler`, except it takes one more parameter before filter. And it's a `keys`.
 
 Key resolver helps us know "what should we track?" in this case it's user's id from message.
 
@@ -231,7 +231,7 @@ async def handle_message(
     if context.update.from_user: # make sure the message has a user to track the id.
 
         @context.continue_with_this_message( # this is the actual mage! it make these two handlers related to each other.
-            key_resolver=MessageSenderId(context.update.from_user.id), # keep track of user using it's unique id.
+            keys=[MessageSenderId(context.update.from_user.id)], # keep track of user using it's unique id.
             filter=mf.text_message & mf.private, # any text message is ok here!
             tag="give_name", # It's optional! you can name the function below instead.
         )
@@ -256,7 +256,7 @@ async def handle_message(
     if context.update.from_user: 
 
         @context.continue_with_this_message(
-            key_resolver=MessageSenderId(context.update.from_user.id),
+            keys=[MessageSenderId(context.update.from_user.id)],
             filter=mf.text_message & mf.private,
             tag="give_name"
         )
@@ -271,7 +271,7 @@ async def handle_message(
 
                 # Again
                 @context.continue_with_this_message(
-                    key_resolver=MessageSenderId(context.update.from_user.id),
+                    keys=[MessageSenderId(context.update.from_user.id)],
                     filter=mf.text_message & mf.private,
                     tag="give_age", # Another name, it's important!
                     name=context.update.text,  # -> you can pass custom data to handler. they're available in callback's *args or **kwargs.
@@ -333,11 +333,11 @@ async def handle_message(context: MessageContext):
     await context.reply_text("Please gimme you name ...")
 
     if context.update.from_user:
-        key_resolver = MessageSenderId(context.update.from_user.id) # key_resolver is same for both.
+        keys = [MessageSenderId(context.update.from_user.id)] # keys is same for both. ( it should be a list )
         context.continue_with_many(
-            ContinueWithInfo.with_message("give_name", key_resolver, priority=1), # first of all try to continue with `"give_name"` if possible ( filters should pass )
+            ContinueWithInfo.with_message("give_name", keys, priority=1), # first of all try to continue with `"give_name"` if possible ( filters should pass )
             # If this handler is invoked, we'll stop propagation! so the next one is not triggered.
-            ContinueWithInfo.with_message("unrelated", key_resolver, priority=0), # If the first handler is not triggered and we reached this point, it means the update is unrelated. 
+            ContinueWithInfo.with_message("unrelated", keys, priority=0), # If the first handler is not triggered and we reached this point, it means the update is unrelated. 
         )
 ```
 
@@ -372,10 +372,10 @@ async def unrelated(context: MessageContext):
     await context.reply_text("Please try again with a text message.")
     if context.update.from_user:
         # Used to resolve the key for the context.
-        key_resolver = MessageSenderId(context.update.from_user.id)
+        keys = [MessageSenderId(context.update.from_user.id)]
         context.continue_with_many( # now this method can also trigger `"give_name"` or itself based on received update. It creates a loop till we get our right answer.
-            ContinueWithInfo.with_message("give_name", key_resolver, priority=1),
-            ContinueWithInfo.with_message("unrelated", key_resolver, priority=0),
+            ContinueWithInfo.with_message("give_name", keys, priority=1),
+            ContinueWithInfo.with_message("unrelated", keys, priority=0),
         )
 ```
 
@@ -433,10 +433,10 @@ async def give_name(context: MessageContext):
 async def unrelated(context: MessageContext):
     await context.reply_text("Please try again with a text message.")
     if context.update.from_user:
-        key_resolver = MessageSenderId(context.update.from_user.id)
+        keys = [MessageSenderId(context.update.from_user.id)]
         context.continue_with_many(
-            ContinueWithInfo.with_message("give_name", key_resolver, priority=1),
-            ContinueWithInfo.with_message("unrelated", key_resolver, priority=0),
+            ContinueWithInfo.with_message("give_name", keys, priority=1),
+            ContinueWithInfo.with_message("unrelated", keys, priority=0),
         )
 
 
@@ -445,10 +445,10 @@ async def handle_message(context: MessageContext):
     await context.reply_text("Please gimme you name ...")
 
     if context.update.from_user:
-        key_resolver = MessageSenderId(context.update.from_user.id)
+        keys = [MessageSenderId(context.update.from_user.id)]
         context.continue_with_many(
-            ContinueWithInfo.with_message("give_name", key_resolver, priority=1),
-            ContinueWithInfo.with_message("unrelated", key_resolver, priority=0),
+            ContinueWithInfo.with_message("give_name", keys, priority=1),
+            ContinueWithInfo.with_message("unrelated", keys, priority=0),
         )
 
 
