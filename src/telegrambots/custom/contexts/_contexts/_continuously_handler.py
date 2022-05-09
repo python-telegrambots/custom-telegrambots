@@ -6,6 +6,11 @@ from telegrambots.wrapper.types.objects import Update, CallbackQuery, Message
 
 from ...general import TUpdate
 from ...key_resolvers.key_resolver import AbstractKeyResolver
+from ...key_resolvers import (
+    CallbackQueryMessageId,
+    MessageSenderId,
+    CallbackQuerySenderId,
+)
 
 
 @dataclasses.dataclass(init=True, frozen=True, slots=True)
@@ -37,6 +42,43 @@ class ContinueWithInfo(Generic[TUpdate]):
         )
 
     @staticmethod
+    def with_callback_query_from(
+        target_tag: str,
+        user_id: int,
+        priority: int = 0,
+        *args: Any,
+        **kwargs: Any,
+    ):
+        return ContinueWithInfo(
+            target_tag=target_tag,
+            update_type=CallbackQuery,
+            resolve_update=lambda x: x.callback_query,
+            keys=[CallbackQuerySenderId(user_id)],
+            priority=priority,
+            args=args,
+            kwargs=kwargs,
+        )
+
+    @staticmethod
+    def with_callback_query_same_message_from(
+        target_tag: str,
+        message_id: int,
+        user_id: int,
+        priority: int = 0,
+        *args: Any,
+        **kwargs: Any,
+    ):
+        return ContinueWithInfo(
+            target_tag=target_tag,
+            update_type=CallbackQuery,
+            resolve_update=lambda x: x.callback_query,
+            keys=[CallbackQuerySenderId(user_id), CallbackQueryMessageId(message_id)],
+            priority=priority,
+            args=args,
+            kwargs=kwargs,
+        )
+
+    @staticmethod
     def with_message(
         target_tag: str,
         keys: Sequence[AbstractKeyResolver[Message, Any]],
@@ -49,6 +91,24 @@ class ContinueWithInfo(Generic[TUpdate]):
             update_type=Message,
             resolve_update=lambda x: x.message,
             keys=keys,
+            priority=priority,
+            args=args,
+            kwargs=kwargs,
+        )
+
+    @staticmethod
+    def with_message_from(
+        target_tag: str,
+        user_id: int,
+        priority: int = 0,
+        *args: Any,
+        **kwargs: Any,
+    ):
+        return ContinueWithInfo(
+            target_tag=target_tag,
+            update_type=Message,
+            resolve_update=lambda x: x.message,
+            keys=[MessageSenderId(user_id)],
             priority=priority,
             args=args,
             kwargs=kwargs,

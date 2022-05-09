@@ -10,13 +10,13 @@ from typing import (
 
 from telegrambots.wrapper.types.objects import Update
 
-from ...client import TelegramBot
 from ...general import Exctractable, TUpdate
 from ...extensions.context import PropagationExtension, ContinueWithExtensions
 
 
 if TYPE_CHECKING:
     from ...dispatcher import Dispatcher
+    from ...client import TelegramBot
 
 
 class ContextTemplate(metaclass=ABCMeta):
@@ -40,7 +40,7 @@ class ContextTemplate(metaclass=ABCMeta):
 
     @final
     @property
-    def bot(self) -> TelegramBot:
+    def bot(self) -> "TelegramBot":
         """`TelegramBot`: Bot instance"""
         return self.__dp.bot
 

@@ -100,11 +100,20 @@ from telegrambots.wrapper.types.objects import (
     # InputMediaPhoto,
     # InputMediaVideo,
 )
+from .dispatcher import Dispatcher
 
 
 class TelegramBot(TelegramBotsClient):
     def __init__(self, token: str):
         super().__init__(token)
+        self._dispatcher: Optional[Dispatcher] = None
+
+    @property
+    def dispatcher(self) -> Dispatcher:
+        """Returns the dispatcher instance."""
+        if self._dispatcher is None:
+            self._dispatcher = Dispatcher(self)
+        return self._dispatcher
 
     async def get_me(self):
         """Use this method to get information about the bot.

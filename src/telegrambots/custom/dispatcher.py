@@ -1,15 +1,28 @@
+import asyncio
 import logging
-from typing import Any, Callable, Coroutine, Optional, cast, final, overload
+from typing import (
+    Any,
+    Callable,
+    Coroutine,
+    Optional,
+    cast,
+    final,
+    overload,
+    TYPE_CHECKING,
+)
 
 from telegrambots.wrapper.types.objects import Update
 
-from .client import TelegramBot
 from .contexts._contexts._continuously_handler import ContinuouslyHandlerTemplate
 from .exceptions.handlers import HandlerRegistered
 from .exceptions.propagations import BreakPropagation, ContinuePropagation
 from .handlers._handlers.handler_template import HandlerTemplate
 from .processor import ProcessorTemplate, SequentialProcessor
 from .extensions.dispatcher import AddExtensions
+
+if TYPE_CHECKING:
+    from .client import TelegramBot
+
 
 logging.basicConfig(
     format="%(asctime)s %(message)s",
@@ -22,10 +35,10 @@ dispatcher_logger = logging.getLogger("telegrambots.dispatcher")
 class Dispatcher:
     def __init__(
         self,
-        _bot: TelegramBot,
+        _bot: "TelegramBot",
         *,
         handle_error: Optional[
-            Callable[[TelegramBot, Exception], Coroutine[Any, Any, None]]
+            Callable[["TelegramBot", Exception], Coroutine[Any, Any, None]]
         ] = None,
         processor_type: Optional[type[ProcessorTemplate[Update]]] = None,
     ) -> None:
@@ -53,7 +66,7 @@ class Dispatcher:
 
     @final
     @property
-    def bot(self) -> TelegramBot:
+    def bot(self) -> "TelegramBot":
         """Returns the bot."""
         return self._bot
 
@@ -75,6 +88,10 @@ class Dispatcher:
             f"Feeding update {cast(type, update.update_type).__name__}:{update.update_id}"
         )
         await self._processor.process(update)
+
+    def unlimited(self, *allowed_updates: str):
+        """Sets the dispatcher to unlimited mode. receiving updates till unlimited timout."""
+        asyncio.run(self._unlimited(*allowed_updates))
 
     def handler_tag_exists(self, tag: str, update_type: type[Any]):
         """Checks if a handler with the given tag exists.
@@ -139,6 +156,10 @@ class Dispatcher:
                 f"Added a continuously handler: {continuously_handler.update_type.__name__}:{continuously_handler.target_tag}"
             )
             self._continuously_handlers.append((continuously_handler,))
+
+    async def _unlimited(self, *allowed_updates: str):
+        async for update in self.bot.stream_updates(list(allowed_updates)):
+            await self.feed_update(update)
 
     async def _process_update(self, update: Update):
         update_type = update.update_type

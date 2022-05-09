@@ -3,6 +3,7 @@ from typing import Callable, Generic, Optional
 from .key_resolver import AbstractKeyResolver, KeyResolver
 from telegrambots.wrapper.types.objects import CallbackQuery, Message, Update
 from ..general import TKey, TUpdate
+from .key_builder import KeyBuilder
 
 
 def create_key(
@@ -104,4 +105,12 @@ class CallbackQueryMessageId(CallbackQueryKeyResolver[int]):
         return message.message_id
 
 
-__all__ = ["MessageSenderId", "CallbackQuerySenderId", "CallbackQueryMessageId"]
+__all__ = [
+    "MessageSenderId",
+    "CallbackQuerySenderId",
+    "CallbackQueryMessageId",
+    "create_key",
+    "create_callback_query_key",
+    "create_message_key",
+    "KeyBuilder",
+]

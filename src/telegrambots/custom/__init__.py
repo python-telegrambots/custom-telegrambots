@@ -12,9 +12,7 @@ from .key_resolvers import (
     create_callback_query_key,
     create_message_key,
     create_key,
-    CallbackQueryMessageId,
-    CallbackQuerySenderId,
-    MessageSenderId,
+    KeyBuilder,
 )
 
 
@@ -30,7 +28,5 @@ __all__ = [
     "create_callback_query_key",
     "create_message_key",
     "create_key",
-    "CallbackQueryMessageId",
-    "CallbackQuerySenderId",
-    "MessageSenderId",
+    "KeyBuilder",
 ]
