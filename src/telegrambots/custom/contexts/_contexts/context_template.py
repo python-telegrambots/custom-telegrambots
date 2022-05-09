@@ -3,6 +3,7 @@ from typing import (
     Any,
     Callable,
     Generic,
+    Mapping,
     Optional,
     final,
     TYPE_CHECKING,
@@ -21,7 +22,11 @@ if TYPE_CHECKING:
 
 class ContextTemplate(metaclass=ABCMeta):
     def __init__(
-        self, dp: "Dispatcher", update: Update, update_type: type[Any], handler_tag: str
+        self,
+        dp: "Dispatcher",
+        update: Update,
+        update_type: type[Any],
+        handler_tag: str,
     ):
         self.__dp = dp
         self.__update = update
@@ -78,11 +83,28 @@ class ContextTemplate(metaclass=ABCMeta):
         return self.__continue_with
 
 
-class GenericContext(Generic[TUpdate], Exctractable[TUpdate], ABC, ContextTemplate):
+class GenericContext(
+    Generic[TUpdate], Exctractable[TUpdate], Mapping[str, Any], ContextTemplate, ABC
+):
     def __init__(
-        self, dp: "Dispatcher", update: Update, update_type: type[Any], handler_tag: str
+        self,
+        dp: "Dispatcher",
+        update: Update,
+        update_type: type[Any],
+        handler_tag: str,
+        **kwargs: Any,
     ) -> None:
         super().__init__(dp, update, update_type, handler_tag)
+        self._metadata: dict[str, Any] = kwargs
+
+    def __getitem__(self, name: str):
+        return self._metadata[name]
+
+    def __iter__(self):
+        return iter(self._metadata)
+
+    def __len__(self) -> int:
+        return len(self._metadata)
 
     @final
     @property
@@ -102,8 +124,9 @@ class Context(Generic[TUpdate], GenericContext[TUpdate]):
         update: Update,
         update_type: type[Any],
         handler_tag: str,
+        **kwargs: Any,
     ) -> None:
-        super().__init__(dp, update, update_type, handler_tag)
+        super().__init__(dp, update, update_type, handler_tag, **kwargs)
         self.__extractor = _exctractor
 
     @final

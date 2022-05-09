@@ -4,6 +4,7 @@ from typing import (
     Any,
     Callable,
     Coroutine,
+    Mapping,
     Optional,
     cast,
     final,
@@ -158,8 +159,9 @@ class Dispatcher:
             self._continuously_handlers.append((continuously_handler,))
 
     async def _unlimited(self, *allowed_updates: str):
-        async for update in self.bot.stream_updates(list(allowed_updates)):
-            await self.feed_update(update)
+        async with self.bot:
+            async for update in self.bot.stream_updates(list(allowed_updates)):
+                await self.feed_update(update)
 
     async def _process_update(self, update: Update):
         update_type = update.update_type
@@ -173,7 +175,8 @@ class Dispatcher:
                     if c.check_keys(update):
                         handler = self._handlers[update_type][c.target_tag]
 
-                        if not handler.should_process(update):
+                        result = handler.should_process(update)
+                        if not result.result:
                             continue
 
                         if handler.continue_after is not None:
@@ -184,7 +187,12 @@ class Dispatcher:
                             f"Processing continuously handler {c.update_type.__name__}:{c.target_tag}"
                         )
                         await self._do_handling(
-                            handler, update, c.target_tag, *c.args, **c.kwargs
+                            handler,
+                            update,
+                            c.target_tag,
+                            result.metadata,
+                            *c.args,
+                            **c.kwargs,
                         )
                         self._continuously_handlers.remove(batch)
                         return  # Don't process the update anymore
@@ -201,8 +209,11 @@ class Dispatcher:
             )
             if not h.continue_after
         ):
-            if handler.should_process(update):
-                handling_result = await self._do_handling(handler, update, k)
+            result = handler.should_process(update)
+            if result.result:
+                handling_result = await self._do_handling(
+                    handler, update, k, result.metadata
+                )
                 if handling_result is not None:
                     if handling_result:
                         continue
@@ -214,12 +225,18 @@ class Dispatcher:
         handler: HandlerTemplate,
         update: Update,
         handler_tag: str,
+        filter_data: Mapping[str, Any],
         *args: Any,
         **kwargs: Any,
     ):
         try:
             await handler.process(
-                self, update, handler.update_type, handler_tag, *args, **kwargs
+                self,
+                update,
+                handler_tag,
+                filter_data,
+                *args,
+                **kwargs,
             )
         except ContinuePropagation:
             return True  # -> continue to next handler

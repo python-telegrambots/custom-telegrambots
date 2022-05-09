@@ -1,18 +1,20 @@
-from typing import Any, Callable, Coroutine, Optional, final
+from typing import Any, Callable, Coroutine, Mapping, Optional, final, TYPE_CHECKING
 
 from telegrambots.wrapper.types.objects import CallbackQuery, Message, Update
 
-from ...contexts._contexts.context_template import GenericContext
 from ...contexts import CallbackQueryContext, MessageContext
-from ...filters._filters.filter_template import Filter
 from .handler_template import GenericHandler
+
+if TYPE_CHECKING:
+    from ...filters._filters.filter_template import Filter
+    from ...dispatcher import Dispatcher
 
 
 class MessageHandler(GenericHandler[Message]):
     def __init__(
         self,
         _processor: Callable[[MessageContext], Coroutine[Any, Any, None]],
-        _filter: Filter[Message],
+        _filter: "Filter[Message]",
         continue_after: Optional[list[str]] = None,
         priority: int = 0,
     ) -> None:
@@ -29,14 +31,21 @@ class MessageHandler(GenericHandler[Message]):
         return v
 
     @final
-    async def _process(
-        self, context: GenericContext[Message], *args: Any, **kwargs: Any
-    ):
+    async def __process__(
+        self,
+        dp: "Dispatcher",
+        update: Update,
+        handler_tag: str,
+        filter_data: Mapping[str, Any],
+        *args: Any,
+        **kwargs: Any
+    ) -> None:
         return await self._processor(
             MessageContext(
-                context.dp,
-                context.wrapper_update,
-                context.handler_tag,
+                dp,
+                update,
+                handler_tag,
+                **filter_data,
             ),
             *args,
             **kwargs,
@@ -60,7 +69,7 @@ class CallbackQueryHandler(GenericHandler[CallbackQuery]):
     def __init__(
         self,
         _processor: Callable[[CallbackQueryContext], Coroutine[Any, Any, None]],
-        _filter: Filter[CallbackQuery],
+        _filter: "Filter[CallbackQuery]",
         continue_after: Optional[list[str]] = None,
         priority: int = 0,
     ) -> None:
@@ -77,12 +86,21 @@ class CallbackQueryHandler(GenericHandler[CallbackQuery]):
         return c
 
     @final
-    async def _process(
-        self, context: GenericContext[CallbackQuery], *args: Any, **kwargs: Any
-    ):
+    async def __process__(
+        self,
+        dp: "Dispatcher",
+        update: Update,
+        handler_tag: str,
+        filter_data: Mapping[str, Any],
+        *args: Any,
+        **kwargs: Any
+    ) -> None:
         return await self._processor(
             CallbackQueryContext(
-                context.dp, context.wrapper_update, context.handler_tag
+                dp,
+                update,
+                handler_tag,
+                **filter_data,
             ),
             *args,
             **kwargs,

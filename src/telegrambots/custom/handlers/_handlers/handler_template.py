@@ -1,15 +1,20 @@
 from abc import ABC, ABCMeta, abstractmethod
-from typing import Any, Callable, Coroutine, Generic, Optional, final, TYPE_CHECKING
+from typing import (
+    Any,
+    Callable,
+    Coroutine,
+    Generic,
+    Mapping,
+    Optional,
+    final,
+    TYPE_CHECKING,
+)
 
 from telegrambots.wrapper.types.objects import Update
 
-from ...contexts._contexts.context_template import (
-    Context,
-    ContextTemplate,
-    GenericContext,
-)
+from ...contexts._contexts.context_template import Context, GenericContext
 from ...filters._filters.filter_template import Filter
-from ...general import Exctractable, TUpdate, check, extract
+from ...general import Exctractable, TUpdate, check, extract, ContainedResult
 
 if TYPE_CHECKING:
     from ...dispatcher import Dispatcher
@@ -18,12 +23,18 @@ if TYPE_CHECKING:
 class HandlerTemplate(metaclass=ABCMeta):
     @abstractmethod
     async def __process__(
-        self, context: ContextTemplate, *args: Any, **kwargs: Any
+        self,
+        dp: "Dispatcher",
+        update: Update,
+        handler_tag: str,
+        filter_data: Mapping[str, Any],
+        *args: Any,
+        **kwargs: Any,
     ) -> None:
         ...
 
     @abstractmethod
-    def should_process(self, update: Update) -> bool:
+    def should_process(self, update: Update) -> ContainedResult:
         ...
 
     @property
@@ -43,15 +54,16 @@ class HandlerTemplate(metaclass=ABCMeta):
         self,
         dp: "Dispatcher",
         update: Update,
-        update_type: type[Any],
         handler_tag: str,
+        filter_data: Mapping[str, Any],
         *args: Any,
         **kwargs: Any,
     ) -> None:
         return await self.__process__(
-            ContextTemplate(
-                dp, update=update, update_type=update_type, handler_tag=handler_tag
-            ),
+            dp,
+            update,
+            handler_tag,
+            filter_data,
             *args,
             **kwargs,
         )
@@ -65,31 +77,22 @@ class GenericHandler(Generic[TUpdate], Exctractable[TUpdate], ABC, HandlerTempla
         super().__init__()
         self._filter = _filter
 
-    @final
-    async def __process__(
-        self, context: ContextTemplate, *args: Any, **kwargs: Any
-    ) -> None:
-        return await self._process(
-            Context(
-                self.__extractor__,
-                context.dp,
-                context.wrapper_update,
-                context.update_type,
-                context.handler_tag,
-            ),
-            *args,
-            **kwargs,
-        )
-
-    @final
-    def should_process(self, update: Update) -> bool:
-        return check(self._filter, extract(self, update))
-
     @abstractmethod
-    async def _process(
-        self, context: GenericContext[TUpdate], *args: Any, **kwargs: Any
+    async def __process__(
+        self,
+        dp: "Dispatcher",
+        update: Update,
+        handler_tag: str,
+        filter_data: Mapping[str, Any],
+        *args: Any,
+        **kwargs: Any,
     ) -> None:
         ...
+
+    @final
+    def should_process(self, update: Update) -> ContainedResult:
+        checked = check(self._filter, extract(self, update))
+        return ContainedResult(checked, self._filter)
 
 
 class Handler(Generic[TUpdate], GenericHandler[TUpdate]):
@@ -121,11 +124,27 @@ class Handler(Generic[TUpdate], GenericHandler[TUpdate]):
             raise ValueError("Can't resolve actual update.")
         return d
 
-    @final
-    async def _process(
-        self, context: GenericContext[TUpdate], *args: Any, **kwargs: Any
-    ) -> None:
-        return await self._processor(context, *args, **kwargs)
+    async def __process__(
+        self,
+        dp: "Dispatcher",
+        update: Update,
+        handler_tag: str,
+        filter_data: Mapping[str, Any],
+        *args: Any,
+        **kwargs: Any,
+    ):
+        return await self._processor(
+            Context(
+                self.__extractor__,
+                dp,
+                update,
+                self.update_type,
+                handler_tag,
+                **filter_data,
+            ),
+            *args,
+            **kwargs,
+        )
 
     @property
     def update_type(self) -> type[TUpdate]:

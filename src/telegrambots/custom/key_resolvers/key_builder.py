@@ -4,7 +4,11 @@ from typing import Any, Generic
 from telegrambots.wrapper.types.objects import CallbackQuery, Message
 
 from ..general import TUpdate
-from . import CallbackQueryMessageId, CallbackQuerySenderId, MessageSenderId
+from .custom_resolvers import (
+    CallbackQueryMessageId,
+    CallbackQuerySenderId,
+    MessageSenderId,
+)
 from .key_resolver import AbstractKeyResolver
 
 

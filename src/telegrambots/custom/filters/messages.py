@@ -31,40 +31,44 @@ private = chat_type("private")
 """ Allows only messages from private chats. """
 
 
-@overload
-def regex(pattern: str) -> Filter[Message]:
-    """
-    Allows only messages that match a regular expression.
+class Regex(Filter[Message]):
+    @overload
+    def __init__(self, pattern: str):
+        """
+        Allows only messages that match a regular expression.
 
-    Args:
-        pattern (`str`): The regular expression to match.
+        Args:
+            pattern (`str`): The regular expression to match.
 
-    Returns:
-        `Filter`: A filter that allows only messages that match a regular expression.
-    """
-    ...
+        Returns:
+            `Filter`: A filter that allows only messages that match a regular expression.
+        """
+        ...
 
+    @overload
+    def __init__(self, pattern: re.Pattern[str]):
+        """
+        Allows only messages that match a regular expression.
 
-@overload
-def regex(pattern: re.Pattern[str]) -> Filter[Message]:
-    """
-    Allows only messages that match a regular expression.
+        Args:
+            pattern (`str`): The regular expression to match.
 
-    Args:
-        pattern (`str`): The regular expression to match.
+        Returns:
+            `Filter`: A filter that allows only messages that match a regular expression.
+        """
+        ...
 
-    Returns:
-        `Filter`: A filter that allows only messages that match a regular expression.
-    """
-    ...
+    def __init__(self, pattern: str | re.Pattern[str]):
+        if isinstance(pattern, str):
+            self._ap = re.compile(pattern)
+        else:
+            self._ap = pattern
+        super().__init__()
 
-
-def regex(pattern: str | re.Pattern[str]):
-    if isinstance(pattern, str):
-        ap = re.compile(pattern)
-    else:
-        ap = pattern
-
-    return message_filter_factory(
-        lambda message: message.text is not None and ap.match(message.text) is not None
-    )
+    def __check__(self, message: Message) -> bool:
+        if message.text is not None:
+            matches = self._ap.match(message.text)
+            if matches is not None:
+                self._set_metadata("matches", matches)
+                return True
+        return False

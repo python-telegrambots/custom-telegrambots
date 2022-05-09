@@ -1,4 +1,4 @@
-from typing import Optional, final, TYPE_CHECKING
+from typing import Any, Optional, final, TYPE_CHECKING
 
 from telegrambots.wrapper.types.objects import (
     CallbackQuery,
@@ -15,13 +15,14 @@ if TYPE_CHECKING:
 
 class CallbackQueryContext(GenericContext[CallbackQuery]):
     def __init__(
-        self,
-        dp: "Dispatcher",
-        update: Update,
-        handler_tag: str,
+        self, dp: "Dispatcher", update: Update, handler_tag: str, **kwargs: Any
     ) -> None:
         super().__init__(
-            dp, update=update, update_type=CallbackQuery, handler_tag=handler_tag
+            dp,
+            update=update,
+            update_type=CallbackQuery,
+            handler_tag=handler_tag,
+            **kwargs
         )
 
     @final

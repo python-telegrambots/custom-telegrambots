@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
-from typing import Generic, Optional, TypeVar
+import dataclasses
+from typing import Any, Generic, Mapping, TypeVar
 
 from telegrambots.wrapper.types.objects import Update
 
@@ -15,17 +16,23 @@ class Exctractable(Generic[TUpdate], ABC):
 
 class Checkable(Generic[TUpdate], ABC):
     @abstractmethod
-    def __check__(self, update: Optional[TUpdate]) -> bool:
+    def __check__(self, update: TUpdate) -> bool:
         ...
 
 
-def extract(exctractable: Exctractable[TUpdate], update: Update) -> Optional[TUpdate]:
+@dataclasses.dataclass(init=True, frozen=True, slots=True)
+class ContainedResult:
+    result: bool
+    metadata: Mapping[str, Any]
+
+
+def extract(exctractable: Exctractable[TUpdate], update: Update) -> TUpdate:
     if not isinstance(exctractable, Exctractable):  # type: ignore
         raise TypeError("exctractable must be Exctractable")
     return exctractable.__extractor__(update)
 
 
-def check(checkable: Checkable[TUpdate], update: Optional[TUpdate]) -> bool:
+def check(checkable: Checkable[TUpdate], update: TUpdate) -> bool:
     if not isinstance(checkable, Checkable):  # type: ignore
         raise TypeError("checkable must be Checkable")
     return checkable.__check__(update)
