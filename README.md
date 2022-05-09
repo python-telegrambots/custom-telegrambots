@@ -43,7 +43,7 @@ dp = Dispatcher(
 
 # Use decorator to register handler for each update type.
 # You can use filters and combine them.
-@dp.register_message_handler(mf.regex("^/start") & mf.private)
+@dp.add.handlers.via_decorator.message(mf.regex("^/start") & mf.private)
 async def handle_message(
     context: MessageContext,
 ):  # -> async callback function to handle update
@@ -94,17 +94,17 @@ dp = Dispatcher(
 Stop processing this handler or all of pending handlers.
 
 ```py
-@dp.register_message_handler(mf.regex("^/start") & mf.private)
+@dp.add.handlers.via_decorator.message(mf.regex("^/start") & mf.private)
 async def handle_message(context: MessageContext):
     await context.reply_text(
         "Started"
     )
 
-    context.stop_propagation()  # -> stop propagating this update to other handlers.
+    context.propagation.stop()  # -> stop propagating this update to other handlers.
 
     # ---- or ----
 
-    context.continue_propagation()  # -> continue propagating this update to other handlers.
+    context.propagation.resume()  # -> continue propagating this update to other handlers.
 
 ```
 
@@ -134,7 +134,7 @@ class AdvancedMessageFilter(Filter[Message]):
 
     # ---- or anything you like ----
 
-# @dp.register_message_handler(AdvancedMessageFilter())
+# @dp.add.handlers.via_decorator.message(AdvancedMessageFilter())
 #    ...
 ```
 
@@ -158,7 +158,7 @@ def regex(pattern: str | re.Pattern[str]):
         lambda message: message.text is not None and ap.match(message.text) is not None
     )
 
-# @dp.register_message_handler(regex('start'))
+# @dp.add.handlers.via_decorator.message(regex('start'))
 #    ...
 ```
 
@@ -172,7 +172,7 @@ Here's how you do it to get user's name ( as before ).
 
 # ---- sniff ----
 
-@dp.register_message_handler(mf.regex("^/start") & mf.private)
+@dp.add.handlers.via_decorator.message(mf.regex("^/start") & mf.private)
 async def handle_message(
     context: MessageContext,
 ):  # -> async callback function to handle update
@@ -188,14 +188,14 @@ Maybe you need another handler to receive what user sends after.
 
 # ---- sniff ----
 
-@dp.register_message_handler(mf.regex("^/give") & mf.private)
+@dp.add.handlers.via_decorator.message(mf.regex("^/give") & mf.private)
 async def handle_message(
     context: MessageContext,
 ):  # -> async callback function to handle update
     await context.reply_text("Please gimme you name ...")
 
 
-@dp.register_message_handler(mf.text_message & mf.private)
+@dp.add.handlers.via_decorator.message(mf.text_message & mf.private)
 async def gimme_name(
     context: MessageContext,
 ):  # -> async callback function to handle update
@@ -222,7 +222,7 @@ Key resolver helps us know "what should we track?" in this case it's user's id f
 Let's get to work:
 
 ``` py
-@dp.register_message_handler(mf.regex("^/give") & mf.private)
+@dp.add.handlers.via_decorator.message(mf.regex("^/give") & mf.private)
 async def handle_message(
     context: MessageContext,
 ):  # -> async callback function to handle update
@@ -230,7 +230,7 @@ async def handle_message(
 
     if context.update.from_user: # make sure the message has a user to track the id.
 
-        @context.continue_with_this_message( # this is the actual mage! it make these two handlers related to each other.
+        @context.continue_with.this.message( # this is the actual mage! it make these two handlers related to each other.
             keys=[MessageSenderId(context.update.from_user.id)], # keep track of user using it's unique id.
             filter=mf.text_message & mf.private, # any text message is ok here!
             tag="give_name", # It's optional! you can name the function below instead.
@@ -247,7 +247,7 @@ Amazing ? it's not finished yet!
 What if you need another info? like user's age? NO PROBLEM! repeat what you did before.
 
 ``` py
-@dp.register_message_handler(mf.regex("^/give") & mf.private)
+@dp.add.handlers.via_decorator.message(mf.regex("^/give") & mf.private)
 async def handle_message(
     context: MessageContext,
 ):  # -> async callback function to handle update
@@ -255,7 +255,7 @@ async def handle_message(
 
     if context.update.from_user: 
 
-        @context.continue_with_this_message(
+        @context.continue_with.this.message(
             keys=[MessageSenderId(context.update.from_user.id)],
             filter=mf.text_message & mf.private,
             tag="give_name"
@@ -270,7 +270,7 @@ async def handle_message(
             if context.update.from_user:
 
                 # Again
-                @context.continue_with_this_message(
+                @context.continue_with.this.message(
                     keys=[MessageSenderId(context.update.from_user.id)],
                     filter=mf.text_message & mf.private,
                     tag="give_age", # Another name, it's important!
@@ -301,17 +301,17 @@ Let's create our three handlers
 # ---- sniff ----
 
 # Our starter handler.
-@dp.register_message_handler(mf.regex("^/start") & mf.private)
+@dp.add.handlers.via_decorator.message(mf.regex("^/start") & mf.private)
 async def handle_message(context: MessageContext):
     await context.reply_text("Please gimme you name ...")
 
 # Here we excepted a valid text message.
-@dp.register_message_handler(filter=mf.text_message)
+@dp.add.handlers.via_decorator.message(filter=mf.text_message)
 async def give_name(context: MessageContext):
     await context.reply_text(f"Ahh, your name is {context.update.text}!")
 
 # All other type of messages ( non-text ) should go here.
-@dp.register_message_handler(filter=mf.any_message)
+@dp.add.handlers.via_decorator.message(filter=mf.any_message)
 async def unrelated(context: MessageContext):
     await context.reply_text("Please try again with a text message.")
 
@@ -328,13 +328,13 @@ Let's modify starter handler:
 ``` py
 # Use decorator to register handler for each update type.
 # You can use filters and combine them.
-@dp.register_message_handler(mf.regex("^/start") & mf.private)
+@dp.add.handlers.via_decorator.message(mf.regex("^/start") & mf.private)
 async def handle_message(context: MessageContext):
     await context.reply_text("Please gimme you name ...")
 
     if context.update.from_user:
         keys = [MessageSenderId(context.update.from_user.id)] # keys is same for both. ( it should be a list )
-        context.continue_with_many(
+        context.continue_with.many(
             ContinueWithInfo.with_message("give_name", keys, priority=1), # first of all try to continue with `"give_name"` if possible ( filters should pass )
             # If this handler is invoked, we'll stop propagation! so the next one is not triggered.
             ContinueWithInfo.with_message("unrelated", keys, priority=0), # If the first handler is not triggered and we reached this point, it means the update is unrelated. 
@@ -344,13 +344,13 @@ async def handle_message(context: MessageContext):
 Next, we should tell other two handler, to only be triggered after our starter handler.
 
 ```py
-@dp.register_message_handler(filter=mf.text_message, continue_after=["handle_message"]) # continue only after `"handle_message"`
+@dp.add.handlers.via_decorator.message(filter=mf.text_message, continue_after=["handle_message"]) # continue only after `"handle_message"`
 async def give_name(context: MessageContext):
     await context.reply_text(f"Ahh, your name is {context.update.text}!")
-    context.stop_propagation() # At this point we received what we needed. then stop.
+    context.propagation.stop() # At this point we received what we needed. then stop.
 
 
-@dp.register_message_handler(filter=mf.any_message, continue_after=["handle_message"]) # continue only after `"handle_message"`
+@dp.add.handlers.via_decorator.message(filter=mf.any_message, continue_after=["handle_message"]) # continue only after `"handle_message"`
 async def unrelated(context: MessageContext):
     await context.reply_text("Please try again with a text message.")
 
@@ -365,7 +365,7 @@ In order to do that, we can tell our unrelated handler to continue with `"give_n
 Let's modify unrelated method.
 
 ```py
-@dp.register_message_handler(
+@dp.add.handlers.via_decorator.message(
     filter=mf.any_message, continue_after=["handle_message", "unrelated"] # notice we added this methods name to `continue_after`, so it can be continued with after itself ( user sends multiple unrelated updates in a row )
 )
 async def unrelated(context: MessageContext):
@@ -373,7 +373,7 @@ async def unrelated(context: MessageContext):
     if context.update.from_user:
         # Used to resolve the key for the context.
         keys = [MessageSenderId(context.update.from_user.id)]
-        context.continue_with_many( # now this method can also trigger `"give_name"` or itself based on received update. It creates a loop till we get our right answer.
+        context.continue_with.many( # now this method can also trigger `"give_name"` or itself based on received update. It creates a loop till we get our right answer.
             ContinueWithInfo.with_message("give_name", keys, priority=1),
             ContinueWithInfo.with_message("unrelated", keys, priority=0),
         )
@@ -382,12 +382,12 @@ async def unrelated(context: MessageContext):
 You need to add `"unrelated"` to `"give_name"`'s `continue_after` parameter, so it can be continued after `"unrelated"` for a "try again".
 
 ```py
-@dp.register_message_handler(
+@dp.add.handlers.via_decorator.message(
     filter=mf.text_message, continue_after=["handle_message", "unrelated"]
 )
 async def give_name(context: MessageContext):
     await context.reply_text(f"Ahh, your name is {context.update.text}!")
-    context.stop_propagation()
+    context.propagation.stop()
 ```
 
 now everything is ready! fast and clear.
@@ -419,34 +419,34 @@ async def handle_error(_: TelegramBot, e: Exception):
 dp = Dispatcher(bot, handle_error=handle_error)
 
 
-@dp.register_message_handler(
+@dp.add.handlers.via_decorator.message(
     filter=mf.text_message & mf.private, continue_after=["handle_message", "unrelated"]
 )
 async def give_name(context: MessageContext):
     await context.reply_text(f"Ahh, your name is {context.update.text}!")
-    context.stop_propagation()
+    context.propagation.stop()
 
 
-@dp.register_message_handler(
+@dp.add.handlers.via_decorator.message(
     filter=mf.any_message & mf.private, continue_after=["handle_message", "unrelated"]
 )
 async def unrelated(context: MessageContext):
     await context.reply_text("Please try again with a text message.")
     if context.update.from_user:
         keys = [MessageSenderId(context.update.from_user.id)]
-        context.continue_with_many(
+        context.continue_with.many(
             ContinueWithInfo.with_message("give_name", keys, priority=1),
             ContinueWithInfo.with_message("unrelated", keys, priority=0),
         )
 
 
-@dp.register_message_handler(mf.regex("^/start") & mf.private)
+@dp.add.handlers.via_decorator.message(mf.regex("^/start") & mf.private)
 async def handle_message(context: MessageContext):
     await context.reply_text("Please gimme you name ...")
 
     if context.update.from_user:
         keys = [MessageSenderId(context.update.from_user.id)]
-        context.continue_with_many(
+        context.continue_with.many(
             ContinueWithInfo.with_message("give_name", keys, priority=1),
             ContinueWithInfo.with_message("unrelated", keys, priority=0),
         )

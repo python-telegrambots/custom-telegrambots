@@ -1,6 +1,11 @@
 from typing import Optional, final, TYPE_CHECKING
 
-from telegrambots.wrapper.types.objects import CallbackQuery, Update
+from telegrambots.wrapper.types.objects import (
+    CallbackQuery,
+    Update,
+    MessageEntity,
+    InlineKeyboardMarkup,
+)
 
 from .context_template import GenericContext
 
@@ -50,3 +55,105 @@ class CallbackQueryContext(GenericContext[CallbackQuery]):
             url=url,
             cache_time=cache_time,
         )
+
+    async def edit_text(
+        self,
+        text: str,
+        parse_mode: Optional[str] = None,
+        entities: Optional[list[MessageEntity]] = None,
+        disable_web_page_preview: bool = False,
+        reply_markup: Optional[InlineKeyboardMarkup] = None,
+    ):
+        """Edits the text of a message.
+
+        Args:
+            text (`str`): The new text of the message.
+            parse_mode (`str`, optional): The parse mode to use for the text. Defaults to None.
+            entities (`list[MessageEntity]`, optional): A list of additional entities to send with the message. Defaults to None.
+            disable_web_page_preview (`bool`, optional): Disables link previews for links in this message. Defaults to False.
+            reply_markup (`InlineKeyboardMarkup`, optional): Additional interface options. Defaults to None.
+        """
+
+        if self.update.message is not None:
+            return await self.bot.edit_message_text(
+                chat_id=self.update.message.chat.id,
+                message_id=self.update.message.message_id,
+                text=text,
+                parse_mode=parse_mode,
+                entities=entities,
+                disable_web_page_preview=disable_web_page_preview,
+                reply_markup=reply_markup,
+            )
+        else:
+            raise ValueError(
+                "CallbackQuery contains no message. you may use edit_inline_text instead"
+            )
+
+    async def edit_inline_text(
+        self,
+        text: str,
+        parse_mode: Optional[str] = None,
+        entities: Optional[list[MessageEntity]] = None,
+        disable_web_page_preview: bool = False,
+        reply_markup: Optional[InlineKeyboardMarkup] = None,
+    ):
+        """Edits the text of an inline message.
+
+        Args:
+            text (`str`): The new text of the message.
+            parse_mode (`str`, optional): The parse mode to use for the text. Defaults to None.
+            entities (`list[MessageEntity]`, optional): A list of additional entities to send with the message. Defaults to None.
+            disable_web_page_preview (`bool`, optional): Disables link previews for links in this message. Defaults to False.
+            reply_markup (`InlineKeyboardMarkup`, optional): Additional
+        """
+
+        if self.update.inline_message_id is not None:
+            return await self.bot.edit_inline_message_text(
+                inline_message_id=self.update.inline_message_id,
+                text=text,
+                parse_mode=parse_mode,
+                entities=entities,
+                disable_web_page_preview=disable_web_page_preview,
+                reply_markup=reply_markup,
+            )
+        else:
+            raise ValueError(
+                "CallbackQuery contains no inline message id. you may use edit_text instead"
+            )
+
+    async def edit_reply_markup(
+        self, reply_markup: Optional[InlineKeyboardMarkup] = None
+    ):
+        """Edits the reply markup of a message.
+
+        Args:
+            reply_markup (`InlineKeyboardMarkup`, optional): The new reply markup of the message. Defaults to None.
+        """
+        if self.update.message is not None:
+            return await self.bot.edit_message_reply_markup(
+                chat_id=self.update.message.chat.id,
+                message_id=self.update.message.message_id,
+                reply_markup=reply_markup,
+            )
+        else:
+            raise ValueError(
+                "CallbackQuery contains no message. you may use edit_inline_reply_markup instead"
+            )
+
+    async def edit_inline_reply_markup(
+        self, reply_markup: Optional[InlineKeyboardMarkup] = None
+    ):
+        """Edits the reply markup of an inline message.
+
+        Args:
+            reply_markup (`InlineKeyboardMarkup`, optional): The new reply markup of the message. Defaults to None.
+        """
+        if self.update.inline_message_id is not None:
+            return await self.bot.edit_inline_message_reply_markup(
+                inline_message_id=self.update.inline_message_id,
+                reply_markup=reply_markup,
+            )
+        else:
+            raise ValueError(
+                "CallbackQuery contains no inline message id. you may use edit_reply_markup instead"
+            )

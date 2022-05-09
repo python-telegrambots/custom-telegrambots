@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Callable, Generic
+from typing import Callable, Generic, Optional
 
 from telegrambots.wrapper.types.objects import Update
 
@@ -29,7 +29,7 @@ class AbstractKeyResolver(Generic[TUpdate, TKey], Exctractable[TUpdate], ABC):
 class KeyResolver(Generic[TUpdate, TKey], AbstractKeyResolver[TUpdate, TKey]):
     def __init__(
         self,
-        _extractor: Callable[[Update], TUpdate],
+        _extractor: Callable[[Update], Optional[TUpdate]],
         resolver: Callable[[TUpdate], TKey],
         key: TKey,
     ):
@@ -41,4 +41,7 @@ class KeyResolver(Generic[TUpdate, TKey], AbstractKeyResolver[TUpdate, TKey]):
         return self.__resolver(update)
 
     def __extractor__(self, update: Update) -> TUpdate:
-        return self.__extractor(update)
+        u = self.__extractor(update)
+        if u is not None:
+            return u
+        raise ValueError("Update has no value")

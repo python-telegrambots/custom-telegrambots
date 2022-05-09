@@ -3,28 +3,20 @@ from typing import (
     Any,
     Callable,
     Generic,
-    NoReturn,
     Optional,
-    Sequence,
     final,
     TYPE_CHECKING,
-    Coroutine,
 )
 
-from telegrambots.wrapper.types.objects import Update, Message, CallbackQuery
+from telegrambots.wrapper.types.objects import Update
 
 from ...client import TelegramBot
 from ...general import Exctractable, TUpdate
-from ...exceptions.propagations import BreakPropagation, ContinuePropagation
-from ._continuously_handler import ContinuouslyHandler, ContinueWithInfo
-from ...key_resolvers.key_resolver import AbstractKeyResolver
+from ...extensions.context import PropagationExtension, ContinueWithExtensions
 
 
 if TYPE_CHECKING:
-    from ...dispatcher import Dispatcher, TUpdate
-    from .callback_query_context import CallbackQueryContext
-    from .message_context import MessageContext
-    from ...filters import Filter
+    from ...dispatcher import Dispatcher
 
 
 class ContextTemplate(metaclass=ABCMeta):
@@ -35,6 +27,10 @@ class ContextTemplate(metaclass=ABCMeta):
         self.__update = update
         self.__update_type = update_type
         self.__handler_tag = handler_tag
+
+        # extensions
+        self.__propagation: Optional[PropagationExtension] = None
+        self.__continue_with: Optional[ContinueWithExtensions] = None
 
     @final
     @property
@@ -65,136 +61,21 @@ class ContextTemplate(metaclass=ABCMeta):
     def wrapper_update(self) -> Update:
         return self.__update
 
-    def stop_propagation(self) -> NoReturn:
-        """Stops the propagation of the current context."""
-        raise BreakPropagation()
+    @final
+    @property
+    def propagation(self) -> PropagationExtension:
+        """Manage propagation of the context."""
+        if self.__propagation is None:
+            self.__propagation = PropagationExtension(self)
+        return self.__propagation
 
-    def continue_propagation(self) -> NoReturn:
-        """Continues the propagation of the current context."""
-        raise ContinuePropagation()
-
-    def continue_with(
-        self,
-        target_tag: str,
-        update_type: type[TUpdate],
-        keys: Sequence[AbstractKeyResolver[TUpdate, Any]],
-        priority: int = 0,
-        *args: Any,
-        **kwargs: Any,
-    ) -> NoReturn:
-        """
-        Continues the propagation of the current context, with another handler.
-
-        Args:
-            target_tag (`str`): Tag of the target handler.
-            update_type (`type`): Type of the update.
-            keys (`list[AbstractKeyResolver[TUpdate, Any]]`): Keys to resolve.
-            priority (`int`): Priority of the handler.
-            args (`Any`): Arguments to pass to the handler.
-            kwargs (`Any`): Keyword arguments to pass to the handler.
-        """
-        self.dp.add_continuously_handler(
-            ContinuouslyHandler(
-                target_tag,
-                self.handler_tag,
-                update_type,
-                keys,
-                priority,
-                *args,
-                **kwargs,
-            )
-        )
-        self.stop_propagation()
-
-    def continue_with_many(self, *continue_with_info: ContinueWithInfo[Any]):
-        """Continues the propagation of the current context, with another handler."""
-        self.dp.add_continuously_handler(
-            tuple(  # type: ignore
-                ContinuouslyHandler(
-                    info.target_tag,
-                    self.handler_tag,
-                    info.update_type,
-                    info.keys,
-                    info.priority,
-                    *info.args,
-                    **info.kwargs,
-                )
-                for info in continue_with_info
-            )
-        )
-        self.stop_propagation()
-
-    def continue_with_message(
-        self,
-        target_tag: str,
-        keys: Sequence[AbstractKeyResolver[Message, Any]],
-        priority: int = 0,
-        *args: Any,
-        **kwargs: Any,
-    ) -> NoReturn:
-        self.continue_with(
-            target_tag,
-            Message,
-            keys,
-            priority,
-            *args,
-            **kwargs,
-        )
-
-    def continue_with_callback_query(
-        self,
-        target_tag: str,
-        keys: Sequence[AbstractKeyResolver[CallbackQuery, Any]],
-        priority: int = 0,
-        *args: Any,
-        **kwargs: Any,
-    ) -> NoReturn:
-        self.continue_with(
-            target_tag,
-            CallbackQuery,
-            keys,
-            priority,
-            *args,
-            **kwargs,
-        )
-
-    def continue_with_this_callback_query(
-        self,
-        keys: Sequence[AbstractKeyResolver[CallbackQuery, Any]],
-        filter: "Filter[CallbackQuery]",
-        tag: Optional[str] = None,
-        *args: Any,
-        **kwargs: Any,
-    ):
-        def decorator(
-            _function: Callable[["CallbackQueryContext"], Coroutine[Any, Any, None]]
-        ):
-            _tag = tag or _function.__name__
-            if not self.dp.handler_tag_exists(_tag, CallbackQuery):
-                self.dp.add_callback_query_handler(
-                    _tag, _function, filter, [self.handler_tag]  # type: ignore
-                )
-            self.continue_with_callback_query(_tag, keys, *args, **kwargs)
-
-        return decorator
-
-    def continue_with_this_message(
-        self,
-        keys: list[AbstractKeyResolver[Message, Any]],
-        filter: "Filter[Message]",
-        tag: Optional[str] = None,
-        *args: Any,
-        **kwargs: Any,
-    ):
-        def decorator(
-            _function: Callable[["MessageContext"], Coroutine[Any, Any, None]]
-        ):
-            _tag = tag or _function.__name__
-            if not self.dp.handler_tag_exists(_tag, Message):
-                self.dp.add_message_handler(_tag, _function, filter, [self.handler_tag])  # type: ignore
-            self.continue_with_message(_tag, keys, *args, **kwargs)
-
-        return decorator
+    @final
+    @property
+    def continue_with(self) -> ContinueWithExtensions:
+        """A set of methods to enable continue_with features for the context."""
+        if self.__continue_with is None:
+            self.__continue_with = ContinueWithExtensions(self)
+        return self.__continue_with
 
 
 class GenericContext(Generic[TUpdate], Exctractable[TUpdate], ABC, ContextTemplate):

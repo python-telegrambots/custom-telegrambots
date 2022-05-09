@@ -62,7 +62,7 @@ from telegrambots.wrapper.types.methods import (
     SendAudio,
     SendDocument,
     SendGame,
-    # SendInvoice,
+    SendInvoice,
     # SendLocation,
     # SendDice,
     # SendVideoNote,
@@ -93,6 +93,7 @@ from telegrambots.wrapper.types.objects import (
     InputFile,
     ChatPermissions,
     ChatAdministratorRights,
+    LabeledPrice,
     # InputMediaAnimation,
     # InputMediaAudio,
     # InputMediaDocument,
@@ -1703,6 +1704,98 @@ class TelegramBot(TelegramBotsClient):
         )
 
     # generate method for SendInvoice
+    async def send_invoice(
+        self,
+        chat_id: Union[int, str],
+        title: str,
+        description: str,
+        payload: str,
+        provider_token: str,
+        currency: str,
+        prices: list[LabeledPrice],
+        start_parameter: str,
+        max_tip_amount: int = 0,
+        suggested_tip_amounts: Optional[list[int]] = None,
+        provider_data: Optional[str] = None,
+        photo_url: Optional[str] = None,
+        photo_size: Optional[int] = None,
+        photo_width: Optional[int] = None,
+        photo_height: Optional[int] = None,
+        need_name: Optional[bool] = None,
+        need_phone_number: Optional[bool] = None,
+        need_email: Optional[bool] = None,
+        need_shipping_address: Optional[bool] = None,
+        send_phone_number_to_provider: Optional[bool] = None,
+        send_email_to_provider: Optional[bool] = None,
+        is_flexible: Optional[bool] = None,
+        disable_notification: Optional[bool] = None,
+        protect_content: Optional[bool] = None,
+        reply_to_message_id: Optional[int] = None,
+        allow_sending_without_reply: Optional[bool] = None,
+        reply_markup: Optional[InlineKeyboardMarkup] = None,
+    ) -> Message:
+
+        """Use this method to send invoices. On success, the sent Message is returned.
+
+        Args:
+            chat_id (`int` | `str`): Unique identifier for the target chat or username of the target channel (in the format @channelusername).
+            title (`str`): Product name, 1-32 characters.
+            description (`str`): Product description, 1-255 characters.
+            payload (`str`): Bot-defined invoice payload, 1-128 characters. This will be sent to the payments provider along with the invoice.
+            provider_token (`str`): Payments provider token, obtained via Botfather.
+            start_parameter (`str`): Unique deep-linking parameter that can be used to generate this invoice when used as a start parameter.
+            currency (`str`): Three-letter ISO 4217 currency code.
+            prices (`list`): List of objects with price information.
+            provider_data (`str`, optional): JSON-encoded data about the invoice, which will be shared with the payment provider.
+            photo_url (`str`, optional): URL of the product photo for the invoice. Can be a photo of the goods or a marketing image for a service. People like it better when they see what they are paying for.
+            photo_size (`int`, optional): Photo size.
+            photo_width (`int`, optional): Photo width.
+            photo_height (`int`, optional): Photo height.
+            need_name (`bool`, optional): Pass True, if you require the user's full name to complete the order.
+            need_phone_number (`bool`, optional): Pass True, if you require the user's phone number to complete the order.
+            need_email (`bool`, optional): Pass True, if you require the user's email address to complete the order.
+            need_shipping_address (`bool`, optional): Pass True, if you require the user's shipping address to complete the order.
+            send_phone_number_to_provider (`bool`, optional): Pass True, if user's phone number should be sent to provider.
+            send_email_to_provider (`bool`, optional): Pass True, if user's email address should be sent to provider.
+            is_flexible (`bool`, optional): Pass True, if the final price depends on the shipping method.
+            disable_notification (`bool`, optional): Sends the message silently. Users will receive a notification with no sound.
+            reply_to_message_id (`int`, optional): If the message is a reply, ID of the original message.
+            allow_sending_without_reply (`bool`, optional): If the message is a reply, ID of the original message.
+            reply_markup (`InlineKeyboardMarkup`, optional): Additional interface options. A JSON-serialized object for an inline keyboard, custom reply keyboard, instructions to remove reply keyboard or to force a reply from the user.
+        """
+
+        return await self(
+            SendInvoice(
+                chat_id=chat_id,
+                title=title,
+                description=description,
+                payload=payload,
+                provider_token=provider_token,
+                currency=currency,
+                prices=prices,
+                max_tip_amount=max_tip_amount,
+                suggested_tip_amounts=suggested_tip_amounts,
+                start_parameter=start_parameter,
+                provider_data=provider_data,
+                photo_url=photo_url,
+                photo_size=photo_size,
+                photo_width=photo_width,
+                photo_height=photo_height,
+                need_name=need_name,
+                need_phone_number=need_phone_number,
+                need_email=need_email,
+                need_shipping_address=need_shipping_address,
+                send_phone_number_to_provider=send_phone_number_to_provider,
+                send_email_to_provider=send_email_to_provider,
+                is_flexible=is_flexible,
+                disable_notification=disable_notification,
+                protect_content=protect_content,
+                reply_to_message_id=reply_to_message_id,
+                allow_sending_without_reply=allow_sending_without_reply,
+                reply_markup=reply_markup,
+            )
+        )
+
     # generate method for SendLocation
     # generate method for SendMediaGroup
     # generate method for SendDice

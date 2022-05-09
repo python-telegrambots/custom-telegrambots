@@ -1,20 +1,21 @@
 import logging
-from typing import Any, Callable, Coroutine, Optional, overload
+from typing import Any, Callable, Coroutine, Optional, cast, final, overload
 
-from telegrambots.wrapper.types.objects import CallbackQuery, Message, Update
+from telegrambots.wrapper.types.objects import Update
 
 from .client import TelegramBot
-from .contexts import CallbackQueryContext, MessageContext
 from .contexts._contexts._continuously_handler import ContinuouslyHandlerTemplate
-from .contexts._contexts.context_template import GenericContext
 from .exceptions.handlers import HandlerRegistered
 from .exceptions.propagations import BreakPropagation, ContinuePropagation
-from .filters._filters.filter_template import Filter
-from .general import TUpdate
-from .handlers._handlers.handler_template import Handler, HandlerTemplate
-from .handlers._handlers.update_handler import CallbackQueryHandler, MessageHandler
+from .handlers._handlers.handler_template import HandlerTemplate
 from .processor import ProcessorTemplate, SequentialProcessor
+from .extensions.dispatcher import AddExtensions
 
+logging.basicConfig(
+    format="%(asctime)s %(message)s",
+    datefmt="%m/%d/%Y %I:%M:%S %p",
+    level=logging.INFO,
+)
 dispatcher_logger = logging.getLogger("telegrambots.dispatcher")
 
 
@@ -47,10 +48,22 @@ class Dispatcher:
         else:
             self._processor = processor_type(self._process_update)
 
+        # extensions
+        self.__add: Optional[AddExtensions] = None
+
+    @final
     @property
     def bot(self) -> TelegramBot:
         """Returns the bot."""
         return self._bot
+
+    @final
+    @property
+    def add(self) -> AddExtensions:
+        """Extensions to add different things to the dispatcher."""
+        if self.__add is None:
+            self.__add = AddExtensions(self)
+        return self.__add
 
     async def feed_update(self, update: Update):
         """Feeds an update to the dispatcher.
@@ -58,7 +71,9 @@ class Dispatcher:
         Args:
             update (`Update`): The update to feed.
         """
-        dispatcher_logger.info(f"Feeding update {update}")
+        dispatcher_logger.info(
+            f"Feeding update {cast(type, update.update_type).__name__}:{update.update_id}"
+        )
         await self._processor.process(update)
 
     def handler_tag_exists(self, tag: str, update_type: type[Any]):
@@ -71,6 +86,25 @@ class Dispatcher:
         if update_type not in self._handlers:
             return False
         return tag in self._handlers[update_type]
+
+    def add_handler(self, tag: str, handler: HandlerTemplate):
+        """Adds a handler to the dispatcher.
+
+        Args:
+            tag (`str`): The tag of the handler. Should be unique.
+            handler (`HandlerTemplate`): The handler to add.
+        """
+        if handler.update_type not in self._handlers:
+            dispatcher_logger.info(
+                f"Added handler batch for {handler.update_type.__name__}s"
+            )
+            self._handlers[handler.update_type] = {}
+
+        if tag in self._handlers[handler.update_type]:
+            raise HandlerRegistered(tag, handler.update_type)
+
+        self._handlers[handler.update_type][tag] = handler
+        dispatcher_logger.info(f"Added handler {handler.update_type.__name__}:{tag}")
 
     @overload
     def add_continuously_handler(
@@ -98,136 +132,13 @@ class Dispatcher:
         if isinstance(continuously_handler, (tuple, list)):
             self._continuously_handlers.append(continuously_handler)
             dispatcher_logger.info(
-                f"Added a batch of continuously handlers {', '.join(f'{x.update_type}:{x.target_tag}' for x in continuously_handler)}"
+                f"Added a batch of continuously handlers {', '.join(f'{x.update_type.__name__}:{x.target_tag}' for x in continuously_handler)}"
             )
         else:
             dispatcher_logger.info(
-                f"Added a continuously handler: {continuously_handler.update_type}:{continuously_handler.target_tag}"
+                f"Added a continuously handler: {continuously_handler.update_type.__name__}:{continuously_handler.target_tag}"
             )
             self._continuously_handlers.append((continuously_handler,))
-
-    def add_handler(self, tag: str, handler: HandlerTemplate):
-        """Adds a handler to the dispatcher.
-
-        Args:
-            tag (`str`): The tag of the handler. Should be unique.
-            handler (`HandlerTemplate`): The handler to add.
-        """
-        if handler.update_type not in self._handlers:
-            dispatcher_logger.info(f"Added handler batch for {handler.update_type}s")
-            self._handlers[handler.update_type] = {}
-
-        if tag in self._handlers[handler.update_type]:
-            raise HandlerRegistered(tag, handler.update_type)
-
-        self._handlers[handler.update_type][tag] = handler
-        dispatcher_logger.info(f"Added handler {handler.update_type}:{tag}")
-
-    def add_callback_query_handler(
-        self,
-        tag: str,
-        function: Callable[[CallbackQueryContext], Coroutine[Any, Any, None]],
-        filter: Filter[CallbackQuery],
-        continue_after: Optional[list[str]] = None,
-    ):
-        """Registers a handler for callback queries.
-
-        Args:
-            tag (`str`): A tag for the handler. Should be unique.
-            function (`Callable[[CallbackQueryContext], Coroutine[Any, Any, None]]`): The function to call.
-            filter (`Filter[CallbackQuery]`): A filter that checks if the callback query passes the filter.
-            continue_after (`Optional[str]`, optional): The tag of the handler to continue after. Defaults to None.
-        """
-
-        self.add_handler(tag, CallbackQueryHandler(function, filter, continue_after))
-
-    def add_message_handler(
-        self,
-        tag: str,
-        function: Callable[[MessageContext], Coroutine[Any, Any, None]],
-        filter: Filter[Message],
-        continue_after: Optional[list[str]] = None,
-    ):
-        """Registers a handler for messages.
-
-        Args:
-            tag (`str`): A tag for the handler. Should be unique.
-            function (`Callable[[MessageContext], Coroutine[Any, Any, None]]`): The function to call.
-            filter (`Filter[Message]`): A filter that checks if the message passes the filter.
-            continue_after (`Optional[str]`, optional): The tag of the handler to continue after. Defaults to None.
-        """
-
-        self.add_handler(tag, MessageHandler(function, filter, continue_after))
-
-    def register_update_handler(
-        self,
-        type_of_update: type[TUpdate],
-        extractor: Callable[[Update], Optional[TUpdate]],
-        filter: Filter[TUpdate],
-        tag: Optional[str] = None,
-        continue_after: Optional[list[str]] = None,
-    ):
-        """Registers a handler for updates.
-
-        Args:
-            type_of_update (`type[TUpdate]`): The type of update to handle.
-            extractor (`Callable[[Update], Optional[TUpdate]]`): A function that extracts the update from an update.
-            filter (`Filter[TUpdate]`): A filter that checks if the update passes the filter.
-            tag (`Optional[str]`, optional): A tag for the handler. Should be unique. Defaults to None.
-            continue_after (`Optional[str]`, optional): The tag of the handler to continue after. Defaults to None.
-        """
-
-        def decorator(
-            _function: Callable[[GenericContext[TUpdate]], Coroutine[Any, Any, None]]
-        ):
-            self.add_handler(
-                tag or _function.__name__,
-                Handler(type_of_update, extractor, _function, filter, continue_after),
-            )
-
-        return decorator
-
-    def register_message_handler(
-        self,
-        filter: Filter[Message],
-        tag: Optional[str] = None,
-        continue_after: Optional[list[str]] = None,
-    ):
-        """Registers a handler for messages.
-
-        Args:
-            filter (`Filter[Message]`): A filter that checks if the message passes the filter.
-            tag (`str`): A tag for the handler. Should be unique.
-        """
-
-        def decorator(_function: Callable[[MessageContext], Coroutine[Any, Any, None]]):
-            self.add_message_handler(
-                tag or _function.__name__, _function, filter, continue_after
-            )
-
-        return decorator
-
-    def register_callback_query_handler(
-        self,
-        filter: Filter[CallbackQuery],
-        tag: Optional[str] = None,
-        continue_after: Optional[list[str]] = None,
-    ):
-        """Registers a handler for callback queries.
-
-        Args:
-            filter (`Filter[CallbackQuery]`): A filter that checks if the callback query passes the filter.
-            tag (`str`): A tag for the handler. Should be unique.
-        """
-
-        def decorator(
-            _function: Callable[[CallbackQueryContext], Coroutine[Any, Any, None]]
-        ):
-            self.add_callback_query_handler(
-                tag or _function.__name__, _function, filter, continue_after
-            )
-
-        return decorator
 
     async def _process_update(self, update: Update):
         update_type = update.update_type
@@ -249,7 +160,7 @@ class Dispatcher:
                                 continue
 
                         dispatcher_logger.info(
-                            f"Processing continuously handler {c.update_type}:{c.target_tag}"
+                            f"Processing continuously handler {c.update_type.__name__}:{c.target_tag}"
                         )
                         await self._do_handling(
                             handler, update, c.target_tag, *c.args, **c.kwargs
