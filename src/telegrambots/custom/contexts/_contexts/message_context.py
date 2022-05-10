@@ -85,3 +85,18 @@ class MessageContext(GenericContext[Message]):
             allow_sending_without_reply=allow_sending_without_reply,
             reply_markup=reply_markup,
         )
+
+
+class TextMessageContext(MessageContext):
+    def __init__(
+        self, dp: "Dispatcher", update: Update, handler_tag: str, **kwargs: Any
+    ) -> None:
+        super().__init__(dp, update=update, handler_tag=handler_tag, **kwargs)
+
+    @final
+    @property
+    def text(self) -> str:
+        """Returns message text."""
+        if self.update.text is not None:
+            return self.update.text
+        raise ValueError("Update has no message")

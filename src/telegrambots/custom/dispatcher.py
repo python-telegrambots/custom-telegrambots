@@ -2,8 +2,6 @@ import asyncio
 import logging
 from typing import (
     Any,
-    Callable,
-    Coroutine,
     Mapping,
     Optional,
     cast,
@@ -20,6 +18,7 @@ from .exceptions.propagations import BreakPropagation, ContinuePropagation
 from .handlers._handlers.handler_template import HandlerTemplate
 from .processor import ProcessorTemplate, SequentialProcessor
 from .extensions.dispatcher import AddExtensions
+from .handlers import AbstractExceptionHandler, default_exception_handler
 
 if TYPE_CHECKING:
     from .client import TelegramBot
@@ -38,9 +37,6 @@ class Dispatcher:
         self,
         _bot: "TelegramBot",
         *,
-        handle_error: Optional[
-            Callable[["TelegramBot", Exception], Coroutine[Any, Any, None]]
-        ] = None,
         processor_type: Optional[type[ProcessorTemplate[Update]]] = None,
     ) -> None:
 
@@ -54,7 +50,7 @@ class Dispatcher:
         self._bot = _bot
         self._handlers: dict[type[Any], dict[str, HandlerTemplate]] = {}
         self._continuously_handlers: list[tuple[ContinuouslyHandlerTemplate]] = []
-        self._handle_error = handle_error
+        self._handle_errors: list[AbstractExceptionHandler] = []
 
         self._processor: ProcessorTemplate[Update]
         if processor_type is None:
@@ -123,6 +119,18 @@ class Dispatcher:
 
         self._handlers[handler.update_type][tag] = handler
         dispatcher_logger.info(f"Added handler {handler.update_type.__name__}:{tag}")
+
+    def add_exception_handler(self, exception_handler: AbstractExceptionHandler):
+        """Adds an exception handler to the dispatcher.
+
+        Args:
+            exception_handler (`AbstractExceptionHandler`): The exception handler to add.
+        """
+        self._handle_errors.append(exception_handler)
+
+    def add_default_exception_handler(self):
+        """Adds the default exception handler to the dispatcher."""
+        self.add_exception_handler(default_exception_handler)
 
     @overload
     def add_continuously_handler(
@@ -251,5 +259,5 @@ class Dispatcher:
         return None
 
     async def _try_handle_error(self, e: Exception):
-        if self._handle_error is not None:
-            await self._handle_error(self._bot, e)
+        for handler in self._handle_errors:
+            await handler.try_handle(self, e)

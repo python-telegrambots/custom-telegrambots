@@ -24,7 +24,7 @@ from ..key_resolvers import (
     CallbackQueryMessageId,
     CallbackQuerySenderId,
 )
-from ..filters import Filter
+from ..filters import Filter, messages as mf
 
 if TYPE_CHECKING:
     from .. import ContextTemplate
@@ -63,6 +63,7 @@ class ContinueWithThisExtensions(ContextExtensions):
         keys: Sequence[AbstractKeyResolver[CallbackQuery, Any]],
         filter: Filter[CallbackQuery],
         tag: Optional[str] = None,
+        other_continue_with: Optional[list[str]] = None,
         *args: Any,
         **kwargs: Any,
     ):
@@ -72,7 +73,10 @@ class ContinueWithThisExtensions(ContextExtensions):
             _tag = tag or _function.__name__
             if not self._context.dp.handler_tag_exists(_tag, CallbackQuery):
                 self._context.dp.add.handlers.callback_query(
-                    _tag, _function, filter, [self._context.handler_tag]
+                    _tag,
+                    _function,
+                    filter,
+                    [self._context.handler_tag] + (other_continue_with or []),
                 )
             self._context.continue_with.callback_query(_tag, keys, *args, **kwargs)
 
@@ -83,6 +87,7 @@ class ContinueWithThisExtensions(ContextExtensions):
         user_id: int,
         filter: Filter[CallbackQuery],
         tag: Optional[str] = None,
+        other_continue_with: Optional[list[str]] = None,
         *args: Any,
         **kwargs: Any,
     ):
@@ -92,7 +97,10 @@ class ContinueWithThisExtensions(ContextExtensions):
             _tag = tag or _function.__name__
             if not self._context.dp.handler_tag_exists(_tag, CallbackQuery):
                 self._context.dp.add.handlers.callback_query(
-                    _tag, _function, filter, [self._context.handler_tag]
+                    _tag,
+                    _function,
+                    filter,
+                    [self._context.handler_tag] + (other_continue_with or []),
                 )
             self._context.continue_with.callback_query(
                 _tag, [CallbackQuerySenderId(user_id)], *args, **kwargs
@@ -106,6 +114,7 @@ class ContinueWithThisExtensions(ContextExtensions):
         user_id: int,
         filter: Filter[CallbackQuery],
         tag: Optional[str] = None,
+        other_continue_with: Optional[list[str]] = None,
         *args: Any,
         **kwargs: Any,
     ):
@@ -115,7 +124,10 @@ class ContinueWithThisExtensions(ContextExtensions):
             _tag = tag or _function.__name__
             if not self._context.dp.handler_tag_exists(_tag, CallbackQuery):
                 self._context.dp.add.handlers.callback_query(
-                    _tag, _function, filter, [self._context.handler_tag]
+                    _tag,
+                    _function,
+                    filter,
+                    [self._context.handler_tag] + (other_continue_with or []),
                 )
             self._context.continue_with.callback_query(
                 _tag,
@@ -131,6 +143,7 @@ class ContinueWithThisExtensions(ContextExtensions):
         message_id: int,
         filter: Filter[CallbackQuery],
         tag: Optional[str] = None,
+        other_continue_with: Optional[list[str]] = None,
         *args: Any,
         **kwargs: Any,
     ):
@@ -140,7 +153,10 @@ class ContinueWithThisExtensions(ContextExtensions):
             _tag = tag or _function.__name__
             if not self._context.dp.handler_tag_exists(_tag, CallbackQuery):
                 self._context.dp.add.handlers.callback_query(
-                    _tag, _function, filter, [self._context.handler_tag]
+                    _tag,
+                    _function,
+                    filter,
+                    [self._context.handler_tag] + (other_continue_with or []),
                 )
             self._context.continue_with.callback_query(
                 _tag,
@@ -156,6 +172,7 @@ class ContinueWithThisExtensions(ContextExtensions):
         keys: list[AbstractKeyResolver[Message, Any]],
         filter: "Filter[Message]",
         tag: Optional[str] = None,
+        other_continue_with: Optional[list[str]] = None,
         *args: Any,
         **kwargs: Any,
     ):
@@ -165,7 +182,10 @@ class ContinueWithThisExtensions(ContextExtensions):
             _tag = tag or _function.__name__
             if not self._context.dp.handler_tag_exists(_tag, Message):
                 self._context.dp.add.handlers.message(
-                    _tag, _function, filter, [self._context.handler_tag]
+                    _tag,
+                    _function,
+                    filter,
+                    [self._context.handler_tag] + (other_continue_with or []),
                 )
             self._context.continue_with.message(_tag, keys, *args, **kwargs)
 
@@ -176,6 +196,7 @@ class ContinueWithThisExtensions(ContextExtensions):
         user_id: int,
         filter: "Filter[Message]",
         tag: Optional[str] = None,
+        other_continue_with: Optional[list[str]] = None,
         *args: Any,
         **kwargs: Any,
     ):
@@ -185,7 +206,35 @@ class ContinueWithThisExtensions(ContextExtensions):
             _tag = tag or _function.__name__
             if not self._context.dp.handler_tag_exists(_tag, Message):
                 self._context.dp.add.handlers.message(
-                    _tag, _function, filter, [self._context.handler_tag]
+                    _tag,
+                    _function,
+                    filter,
+                    [self._context.handler_tag] + (other_continue_with or []),
+                )
+            self._context.continue_with.message(
+                _tag, [MessageSenderId(user_id)], *args, **kwargs
+            )
+
+        return decorator
+
+    def text_input_from(
+        self,
+        user_id: int,
+        tag: Optional[str] = None,
+        other_continue_with: Optional[list[str]] = None,
+        *args: Any,
+        **kwargs: Any,
+    ):
+        def decorator(
+            _function: Callable[["MessageContext"], Coroutine[Any, Any, None]]
+        ):
+            _tag = tag or _function.__name__
+            if not self._context.dp.handler_tag_exists(_tag, Message):
+                self._context.dp.add.handlers.message(
+                    _tag,
+                    _function,  # type: ignore
+                    mf.text_message,
+                    [self._context.handler_tag] + (other_continue_with or []),
                 )
             self._context.continue_with.message(
                 _tag, [MessageSenderId(user_id)], *args, **kwargs
