@@ -63,15 +63,15 @@ from telegrambots.wrapper.types.methods import (
     SendDocument,
     SendGame,
     SendInvoice,
-    # SendLocation,
-    # SendDice,
-    # SendVideoNote,
-    # SendVoice,
-    # SetChatPermissions,
-    # SendContact,
-    # SendVenue,
-    # SendPhoto,
-    # SendPoll,
+    SendLocation,
+    SendDice,
+    SendVideoNote,
+    SendVoice,
+    SetChatPermissions,
+    SendContact,
+    SendVenue,
+    SendPhoto,
+    SendPoll,
 )
 from telegrambots.wrapper.types.objects import (
     ForceReply,
@@ -1806,6 +1806,54 @@ class TelegramBot(TelegramBotsClient):
         )
 
     # generate method for SendLocation
+    async def send_location(
+        self,
+        chat_id: Union[int, str],
+        latitude: float,
+        longitude: float,
+        horizontal_accuracy: Optional[float] = None,
+        live_period: Optional[int] = None,
+        heading: Optional[int] = None,
+        proximity_alert_radius: Optional[int] = None,
+        disable_notification: Optional[bool] = None,
+        protect_content: Optional[bool] = None,
+        reply_to_message_id: Optional[int] = None,
+        allow_sending_without_reply: Optional[bool] = None,
+        reply_markup: Optional[InlineKeyboardMarkup] = None,
+    ) -> Message:
+
+        """Use this method to send point on the map. On success, the sent Message is returned.
+
+        Args:
+            chat_id (`int` | `str`): Unique identifier for the target chat or username of the target channel (in the format @channelusername).
+            latitude (`float`): Latitude of the location.
+            longitude (`float`): Longitude of the location.
+            horizontal_accuracy (`float`, optional): The radius of uncertainty for the location, measured in meters.
+            live_period (`int`, optional): Period in seconds for which the location will be updated.
+            heading (`int`, optional): For live locations, a direction in which the user is moving (heading).
+            disable_notification (`bool`, optional): Sends the message silently. Users will receive a notification
+            proximity_alert_radius (`int`, optional): For live locations, a distance to the location
+            reply_to_message_id (`int`, optional): If the message is a reply, ID of the original message.
+            allow_sending_without_reply (`bool`, optional): If the message is a reply, ID of the original message.
+            reply_markup (`InlineKeyboardMarkup`, optional): Additional interface options. A JSON-serialized object for an inline keyboard, custom reply keyboard, instructions to remove reply keyboard or to force a reply from the user.
+        """
+        return await self(
+            SendLocation(
+                chat_id=chat_id,
+                latitude=latitude,
+                longitude=longitude,
+                horizontal_accuracy=horizontal_accuracy,
+                live_period=live_period,
+                heading=heading,
+                proximity_alert_radius=proximity_alert_radius,
+                disable_notification=disable_notification,
+                protect_content=protect_content,
+                reply_to_message_id=reply_to_message_id,
+                allow_sending_without_reply=allow_sending_without_reply,
+                reply_markup=reply_markup,
+            )
+        )
+
     # generate method for SendMediaGroup
     # generate method for SendDice
     # generate method for SendVideoNote

@@ -14,6 +14,8 @@ The package is available at [PYPI](https://pypi.org/project/telegrambots-custom/
 
 _Package is in preview state and theses are all in preview and may change later._
 
+See [Wiki](https://github.com/python-telegrambots/custom-telegrambots/wiki/) for more working examples.
+
 ```py
 import asyncio
 
