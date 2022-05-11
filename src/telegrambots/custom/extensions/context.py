@@ -64,6 +64,7 @@ class ContinueWithThisExtensions(ContextExtensions):
         filter: Filter[CallbackQuery],
         tag: Optional[str] = None,
         other_continue_with: Optional[list[str]] = None,
+        allow_continue_after_self: bool = False,
         *args: Any,
         **kwargs: Any,
     ):
@@ -77,8 +78,11 @@ class ContinueWithThisExtensions(ContextExtensions):
                     _function,
                     filter,
                     [self._context.handler_tag] + (other_continue_with or []),
+                    allow_continue_after_self,
                 )
-            self._context.continue_with.callback_query(_tag, keys, *args, **kwargs)
+            self._context.continue_with.callback_query(
+                _tag, keys, *args, **(self._context.kwargs | kwargs)
+            )
 
         return decorator
 
@@ -88,6 +92,7 @@ class ContinueWithThisExtensions(ContextExtensions):
         filter: Filter[CallbackQuery],
         tag: Optional[str] = None,
         other_continue_with: Optional[list[str]] = None,
+        allow_continue_after_self: bool = False,
         *args: Any,
         **kwargs: Any,
     ):
@@ -101,9 +106,13 @@ class ContinueWithThisExtensions(ContextExtensions):
                     _function,
                     filter,
                     [self._context.handler_tag] + (other_continue_with or []),
+                    allow_continue_after_self,
                 )
             self._context.continue_with.callback_query(
-                _tag, [CallbackQuerySenderId(user_id)], *args, **kwargs
+                _tag,
+                [CallbackQuerySenderId(user_id)],
+                *args,
+                **(self._context.kwargs | kwargs),
             )
 
         return decorator
@@ -115,6 +124,7 @@ class ContinueWithThisExtensions(ContextExtensions):
         filter: Filter[CallbackQuery],
         tag: Optional[str] = None,
         other_continue_with: Optional[list[str]] = None,
+        allow_continue_after_self: bool = False,
         *args: Any,
         **kwargs: Any,
     ):
@@ -128,12 +138,13 @@ class ContinueWithThisExtensions(ContextExtensions):
                     _function,
                     filter,
                     [self._context.handler_tag] + (other_continue_with or []),
+                    allow_continue_after_self,
                 )
             self._context.continue_with.callback_query(
                 _tag,
                 [CallbackQuerySenderId(user_id), CallbackQueryMessageId(message_id)],
                 *args,
-                **kwargs,
+                **(self._context.kwargs | kwargs),
             )
 
         return decorator
@@ -144,6 +155,7 @@ class ContinueWithThisExtensions(ContextExtensions):
         filter: Filter[CallbackQuery],
         tag: Optional[str] = None,
         other_continue_with: Optional[list[str]] = None,
+        allow_continue_after_self: bool = False,
         *args: Any,
         **kwargs: Any,
     ):
@@ -157,12 +169,13 @@ class ContinueWithThisExtensions(ContextExtensions):
                     _function,
                     filter,
                     [self._context.handler_tag] + (other_continue_with or []),
+                    allow_continue_after_self,
                 )
             self._context.continue_with.callback_query(
                 _tag,
                 [CallbackQueryMessageId(message_id)],
                 *args,
-                **kwargs,
+                **(self._context.kwargs | kwargs),
             )
 
         return decorator
@@ -173,6 +186,7 @@ class ContinueWithThisExtensions(ContextExtensions):
         filter: "Filter[Message]",
         tag: Optional[str] = None,
         other_continue_with: Optional[list[str]] = None,
+        allow_continue_after_self: bool = False,
         *args: Any,
         **kwargs: Any,
     ):
@@ -186,8 +200,11 @@ class ContinueWithThisExtensions(ContextExtensions):
                     _function,
                     filter,
                     [self._context.handler_tag] + (other_continue_with or []),
+                    allow_continue_after_self,
                 )
-            self._context.continue_with.message(_tag, keys, *args, **kwargs)
+            self._context.continue_with.message(
+                _tag, keys, *args, **(self._context.kwargs | kwargs)
+            )
 
         return decorator
 
@@ -197,6 +214,7 @@ class ContinueWithThisExtensions(ContextExtensions):
         filter: "Filter[Message]",
         tag: Optional[str] = None,
         other_continue_with: Optional[list[str]] = None,
+        allow_continue_after_self: bool = False,
         *args: Any,
         **kwargs: Any,
     ):
@@ -210,9 +228,13 @@ class ContinueWithThisExtensions(ContextExtensions):
                     _function,
                     filter,
                     [self._context.handler_tag] + (other_continue_with or []),
+                    allow_continue_after_self,
                 )
             self._context.continue_with.message(
-                _tag, [MessageSenderId(user_id)], *args, **kwargs
+                _tag,
+                [MessageSenderId(user_id)],
+                *args,
+                **(self._context.kwargs | kwargs),
             )
 
         return decorator
@@ -222,6 +244,7 @@ class ContinueWithThisExtensions(ContextExtensions):
         user_id: int,
         tag: Optional[str] = None,
         other_continue_with: Optional[list[str]] = None,
+        allow_continue_after_self: bool = False,
         *args: Any,
         **kwargs: Any,
     ):
@@ -232,12 +255,16 @@ class ContinueWithThisExtensions(ContextExtensions):
             if not self._context.dp.handler_tag_exists(_tag, Message):
                 self._context.dp.add.handlers.message(
                     _tag,
-                    _function,  # type: ignore
+                    _function,
                     mf.text_message,
                     [self._context.handler_tag] + (other_continue_with or []),
+                    allow_continue_after_self,
                 )
             self._context.continue_with.message(
-                _tag, [MessageSenderId(user_id)], *args, **kwargs
+                _tag,
+                [MessageSenderId(user_id)],
+                *args,
+                **(self._context.kwargs | kwargs),
             )
 
         return decorator
@@ -341,6 +368,33 @@ class ContinueWithExtensions(ContextExtensions):
             CallbackQuery,
             keys,
             priority,
+            *args,
+            **kwargs,
+        )
+
+    def self(
+        self,
+        keys: Sequence[AbstractKeyResolver[CallbackQuery, Any]],
+        *args: Any,
+        **kwargs: Any,
+    ) -> NoReturn:
+        self.any(
+            self._context.handler_tag,
+            self._context.update_type,
+            keys,
+            *args,
+            **kwargs,
+        )
+
+    def self_shared_keys(
+        self,
+        *args: Any,
+        **kwargs: Any,
+    ) -> NoReturn:
+        self.any(
+            self._context.handler_tag,
+            self._context.update_type,
+            self._context.kwargs["continue_with_key"],
             *args,
             **kwargs,
         )

@@ -58,3 +58,7 @@ def regex(pattern: str | re.Pattern[str]):
         lambda callback: callback.data is not None
         and ap.match(callback.data) is not None
     )
+
+
+any_callback = callback_query_filter_factory(lambda _: True)
+""" Allows any callback_query. """

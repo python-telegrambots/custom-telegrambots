@@ -27,11 +27,15 @@ class ContextTemplate(metaclass=ABCMeta):
         update: Update,
         update_type: type[Any],
         handler_tag: str,
+        *args: Any,
+        **kwargs: Any,
     ):
         self.__dp = dp
         self.__update = update
         self.__update_type = update_type
         self.__handler_tag = handler_tag
+        self.__args = args
+        self.__kwargs = kwargs
 
         # extensions
         self.__propagation: Optional[PropagationExtension] = None
@@ -68,6 +72,16 @@ class ContextTemplate(metaclass=ABCMeta):
 
     @final
     @property
+    def args(self):
+        return self.__args
+
+    @final
+    @property
+    def kwargs(self):
+        return self.__kwargs
+
+    @final
+    @property
     def propagation(self) -> PropagationExtension:
         """Manage propagation of the context."""
         if self.__propagation is None:
@@ -92,9 +106,10 @@ class GenericContext(
         update: Update,
         update_type: type[Any],
         handler_tag: str,
+        *args: Any,
         **kwargs: Any,
     ) -> None:
-        super().__init__(dp, update, update_type, handler_tag)
+        super().__init__(dp, update, update_type, handler_tag, *args, **kwargs)
         self._metadata: dict[str, Any] = kwargs
 
     def __getitem__(self, name: str):
@@ -124,9 +139,10 @@ class Context(Generic[TUpdate], GenericContext[TUpdate]):
         update: Update,
         update_type: type[Any],
         handler_tag: str,
+        *args: Any,
         **kwargs: Any,
     ) -> None:
-        super().__init__(dp, update, update_type, handler_tag, **kwargs)
+        super().__init__(dp, update, update_type, handler_tag, *args, **kwargs)
         self.__extractor = _exctractor
 
     @final

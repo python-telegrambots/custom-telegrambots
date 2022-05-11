@@ -15,14 +15,20 @@ if TYPE_CHECKING:
 
 class CallbackQueryContext(GenericContext[CallbackQuery]):
     def __init__(
-        self, dp: "Dispatcher", update: Update, handler_tag: str, **kwargs: Any
+        self,
+        dp: "Dispatcher",
+        update: Update,
+        handler_tag: str,
+        *args: Any,
+        **kwargs: Any,
     ) -> None:
         super().__init__(
             dp,
-            update=update,
-            update_type=CallbackQuery,
-            handler_tag=handler_tag,
-            **kwargs
+            update,
+            CallbackQuery,
+            handler_tag,
+            *args,
+            **kwargs,
         )
 
     @final
@@ -32,13 +38,31 @@ class CallbackQueryContext(GenericContext[CallbackQuery]):
             return c
         raise ValueError("Update has no callback query")
 
+    @final
+    @property
+    def data(self) -> Optional[str]:
+        """Returns the data of the callback query."""
+        return self.update.data
+
+    @final
+    @property
+    def message(self):
+        """The message of callback query."""
+        return self.update.message
+
+    @final
+    @property
+    def from_user(self):
+        """The sender of callback query."""
+        return self.update.from_user
+
     async def answer(
         self,
         text: str,
         *,
         show_alert: bool = False,
         url: Optional[str] = None,
-        cache_time: int = 0
+        cache_time: int = 0,
     ) -> None:
         """Answers a callback query.
 

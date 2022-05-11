@@ -13,15 +13,17 @@ if TYPE_CHECKING:
 class MessageHandler(GenericHandler[Message]):
     def __init__(
         self,
+        tag: str,
         _processor: Callable[[MessageContext], Coroutine[Any, Any, None]],
         _filter: "Filter[Message]",
         continue_after: Optional[list[str]] = None,
+        allow_continue_after_self: bool = False,
         priority: int = 0,
     ) -> None:
-        super().__init__(_filter)
+        super().__init__(
+            tag, _filter, Message, continue_after, allow_continue_after_self, priority
+        )
         self._processor = _processor
-        self._continue_after = continue_after
-        self._priority = priority
 
     @final
     def __extractor__(self, update: Update):
@@ -35,48 +37,41 @@ class MessageHandler(GenericHandler[Message]):
         self,
         dp: "Dispatcher",
         update: Update,
-        handler_tag: str,
         filter_data: Mapping[str, Any],
         *args: Any,
         **kwargs: Any
     ) -> None:
+        kwargs.update(**filter_data)
         return await self._processor(
             MessageContext(
                 dp,
                 update,
-                handler_tag,
-                **filter_data,
-            ),
-            *args,
-            **kwargs,
+                self.tag,
+                *args,
+                **kwargs,
+            )
         )
-
-    @property
-    def update_type(self) -> type[Any]:
-        return Message
-
-    @final
-    @property
-    def continue_after(self) -> Optional[list[str]]:
-        return self._continue_after
-
-    @property
-    def priority(self) -> int:
-        return self._priority
 
 
 class CallbackQueryHandler(GenericHandler[CallbackQuery]):
     def __init__(
         self,
+        tag: str,
         _processor: Callable[[CallbackQueryContext], Coroutine[Any, Any, None]],
         _filter: "Filter[CallbackQuery]",
         continue_after: Optional[list[str]] = None,
+        allow_continue_after_self: bool = False,
         priority: int = 0,
     ) -> None:
-        super().__init__(_filter)
+        super().__init__(
+            tag,
+            _filter,
+            CallbackQuery,
+            continue_after,
+            allow_continue_after_self,
+            priority,
+        )
         self._processor = _processor
-        self._continue_after = continue_after
-        self._priority = priority
 
     @final
     def __extractor__(self, update: Update):
@@ -90,31 +85,17 @@ class CallbackQueryHandler(GenericHandler[CallbackQuery]):
         self,
         dp: "Dispatcher",
         update: Update,
-        handler_tag: str,
         filter_data: Mapping[str, Any],
         *args: Any,
         **kwargs: Any
     ) -> None:
+        kwargs.update(**filter_data)
         return await self._processor(
             CallbackQueryContext(
                 dp,
                 update,
-                handler_tag,
-                **filter_data,
-            ),
-            *args,
-            **kwargs,
+                self.tag,
+                *args,
+                **kwargs,
+            )
         )
-
-    @property
-    def update_type(self) -> type[Any]:
-        return CallbackQuery
-
-    @final
-    @property
-    def continue_after(self) -> Optional[list[str]]:
-        return self._continue_after
-
-    @property
-    def priority(self) -> int:
-        return self._priority

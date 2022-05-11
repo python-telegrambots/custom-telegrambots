@@ -26,7 +26,6 @@ class HandlerTemplate(metaclass=ABCMeta):
         self,
         dp: "Dispatcher",
         update: Update,
-        handler_tag: str,
         filter_data: Mapping[str, Any],
         *args: Any,
         **kwargs: Any,
@@ -43,6 +42,11 @@ class HandlerTemplate(metaclass=ABCMeta):
         ...
 
     @property
+    @abstractmethod
+    def tag(self) -> str:
+        ...
+
+    @property
     def continue_after(self) -> Optional[list[str]]:
         return None
 
@@ -54,7 +58,6 @@ class HandlerTemplate(metaclass=ABCMeta):
         self,
         dp: "Dispatcher",
         update: Update,
-        handler_tag: str,
         filter_data: Mapping[str, Any],
         *args: Any,
         **kwargs: Any,
@@ -62,7 +65,6 @@ class HandlerTemplate(metaclass=ABCMeta):
         return await self.__process__(
             dp,
             update,
-            handler_tag,
             filter_data,
             *args,
             **kwargs,
@@ -72,17 +74,33 @@ class HandlerTemplate(metaclass=ABCMeta):
 class GenericHandler(Generic[TUpdate], Exctractable[TUpdate], ABC, HandlerTemplate):
     def __init__(
         self,
+        tag: str,
         _filter: Filter[TUpdate],
+        update_type: type[TUpdate],
+        continue_after: Optional[list[str]] = None,
+        allow_continue_after_self: bool = False,
+        priority: int = 0,
     ) -> None:
         super().__init__()
+        self._tag = tag
         self._filter = _filter
+        self._update_type = update_type
+        self._priority = priority
+
+        if allow_continue_after_self:
+            if continue_after:
+                if tag not in continue_after:
+                    continue_after = continue_after + [tag]
+            else:
+                continue_after = [tag]
+
+        self._continue_after = continue_after
 
     @abstractmethod
     async def __process__(
         self,
         dp: "Dispatcher",
         update: Update,
-        handler_tag: str,
         filter_data: Mapping[str, Any],
         *args: Any,
         **kwargs: Any,
@@ -94,28 +112,49 @@ class GenericHandler(Generic[TUpdate], Exctractable[TUpdate], ABC, HandlerTempla
         checked = check(self._filter, extract(self, update))
         return ContainedResult(checked, self._filter)
 
-
-class Handler(Generic[TUpdate], GenericHandler[TUpdate]):
-    def __init__(
-        self,
-        update_type: type[TUpdate],
-        exctractor: Callable[[Update], Optional[TUpdate]],
-        processor: Callable[[GenericContext[TUpdate]], Coroutine[Any, Any, None]],
-        filter: Filter[TUpdate],
-        continue_after: Optional[list[str]] = None,
-        priority: int = 0,
-    ) -> None:
-        super().__init__(filter)
-        self._exctractor = exctractor
-        self._processor = processor
-        self._update_type = update_type
-        self._continue_after = continue_after
-        self._priority = priority
+    @final
+    @property
+    def tag(self) -> str:
+        return self._tag
 
     @final
     @property
     def continue_after(self) -> Optional[list[str]]:
         return self._continue_after
+
+    @final
+    @property
+    def update_type(self) -> type[TUpdate]:
+        return self._update_type
+
+    @final
+    @property
+    def priority(self) -> int:
+        return self._priority
+
+
+class Handler(Generic[TUpdate], GenericHandler[TUpdate]):
+    def __init__(
+        self,
+        tag: str,
+        update_type: type[TUpdate],
+        exctractor: Callable[[Update], Optional[TUpdate]],
+        processor: Callable[[GenericContext[TUpdate]], Coroutine[Any, Any, None]],
+        filter: Filter[TUpdate],
+        continue_after: Optional[list[str]] = None,
+        allow_continue_after_self: bool = False,
+        priority: int = 0,
+    ) -> None:
+        super().__init__(
+            tag,
+            filter,
+            update_type,
+            continue_after,
+            allow_continue_after_self,
+            priority,
+        )
+        self._exctractor = exctractor
+        self._processor = processor
 
     @final
     def __extractor__(self, update: Update) -> TUpdate:
@@ -128,28 +167,19 @@ class Handler(Generic[TUpdate], GenericHandler[TUpdate]):
         self,
         dp: "Dispatcher",
         update: Update,
-        handler_tag: str,
         filter_data: Mapping[str, Any],
         *args: Any,
         **kwargs: Any,
     ):
+        kwargs.update(**filter_data)
         return await self._processor(
             Context(
                 self.__extractor__,
                 dp,
                 update,
                 self.update_type,
-                handler_tag,
-                **filter_data,
-            ),
-            *args,
-            **kwargs,
+                self.tag,
+                *args,
+                **kwargs,
+            )
         )
-
-    @property
-    def update_type(self) -> type[TUpdate]:
-        return self._update_type
-
-    @property
-    def priority(self) -> int:
-        return self._priority

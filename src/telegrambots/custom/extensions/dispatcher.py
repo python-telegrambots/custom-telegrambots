@@ -35,6 +35,8 @@ class AddHandlerViaDecoratorExtension(DispatcherExtensions):
         filter: Filter[TUpdate],
         tag: Optional[str] = None,
         continue_after: Optional[list[str]] = None,
+        allow_continue_after_self: bool = False,
+        priority: int = 0,
     ):
         """Registers a handler for updates.
 
@@ -44,14 +46,24 @@ class AddHandlerViaDecoratorExtension(DispatcherExtensions):
             filter (`Filter[TUpdate]`): A filter that checks if the update passes the filter.
             tag (`Optional[str]`, optional): A tag for the handler. Should be unique. Defaults to None.
             continue_after (`Optional[str]`, optional): The tag of the handler to continue after. Defaults to None.
+            allow_continue_after_self (`bool`, optional): Same as current adding handler tag to continue_after.
         """
 
         def decorator(
             _function: Callable[[GenericContext[TUpdate]], Coroutine[Any, Any, None]]
         ):
+            n_tag = tag or _function.__name__
             self._dp.add_handler(
-                tag or _function.__name__,
-                Handler(type_of_update, extractor, _function, filter, continue_after),
+                Handler(
+                    n_tag,
+                    type_of_update,
+                    extractor,
+                    _function,
+                    filter,
+                    continue_after,
+                    allow_continue_after_self,
+                    priority,
+                ),
             )
 
         return decorator
@@ -61,17 +73,26 @@ class AddHandlerViaDecoratorExtension(DispatcherExtensions):
         filter: Filter[Message],
         tag: Optional[str] = None,
         continue_after: Optional[list[str]] = None,
+        allow_continue_after_self: bool = False,
+        priority: int = 0,
     ):
         """Registers a handler for messages.
 
         Args:
             filter (`Filter[Message]`): A filter that checks if the message passes the filter.
             tag (`str`): A tag for the handler. Should be unique.
+            continue_after (`Optional[str]`, optional): The tag of the handler to continue after. Defaults to None.
+            allow_continue_after_self (`bool`, optional): Same as current adding handler tag to continue_after.
         """
 
         def decorator(_function: Callable[[MessageContext], Coroutine[Any, Any, None]]):
             self._dp.add.handlers.message(
-                tag or _function.__name__, _function, filter, continue_after
+                tag or _function.__name__,
+                _function,
+                filter,
+                continue_after,
+                allow_continue_after_self,
+                priority,
             )
 
         return decorator
@@ -81,19 +102,28 @@ class AddHandlerViaDecoratorExtension(DispatcherExtensions):
         filter: Filter[CallbackQuery],
         tag: Optional[str] = None,
         continue_after: Optional[list[str]] = None,
+        allow_continue_after_self: bool = False,
+        priority: int = 0,
     ):
         """Registers a handler for callback queries.
 
         Args:
             filter (`Filter[CallbackQuery]`): A filter that checks if the callback query passes the filter.
             tag (`str`): A tag for the handler. Should be unique.
+            continue_after (`Optional[str]`, optional): The tag of the handler to continue after. Defaults to None.
+            allow_continue_after_self (`bool`, optional): Same as current adding handler tag to continue_after.
         """
 
         def decorator(
             _function: Callable[[CallbackQueryContext], Coroutine[Any, Any, None]]
         ):
             self._dp.add.handlers.callback_query(
-                tag or _function.__name__, _function, filter, continue_after
+                tag or _function.__name__,
+                _function,
+                filter,
+                continue_after,
+                allow_continue_after_self,
+                priority,
             )
 
         return decorator
@@ -120,6 +150,8 @@ class AddHandlersExtensions(DispatcherExtensions):
         function: Callable[[CallbackQueryContext], Coroutine[Any, Any, None]],
         filter: Filter[CallbackQuery],
         continue_after: Optional[list[str]] = None,
+        allow_continue_after_self: bool = False,
+        priority: int = 0,
     ):
         """Registers a handler for callback queries.
 
@@ -128,10 +160,18 @@ class AddHandlersExtensions(DispatcherExtensions):
             function (`Callable[[CallbackQueryContext], Coroutine[Any, Any, None]]`): The function to call.
             filter (`Filter[CallbackQuery]`): A filter that checks if the callback query passes the filter.
             continue_after (`Optional[str]`, optional): The tag of the handler to continue after. Defaults to None.
+            allow_continue_after_self (`bool`, optional): Same as current adding handler tag to continue_after.
         """
 
         self._dp.add_handler(
-            tag, CallbackQueryHandler(function, filter, continue_after)
+            CallbackQueryHandler(
+                tag,
+                function,
+                filter,
+                continue_after,
+                allow_continue_after_self,
+                priority,
+            )
         )
 
     def message(
@@ -140,6 +180,8 @@ class AddHandlersExtensions(DispatcherExtensions):
         function: Callable[[MessageContext], Coroutine[Any, Any, None]],
         filter: Filter[Message],
         continue_after: Optional[list[str]] = None,
+        allow_continue_after_self: bool = False,
+        priority: int = 0,
     ):
         """Registers a handler for messages.
 
@@ -148,9 +190,19 @@ class AddHandlersExtensions(DispatcherExtensions):
             function (`Callable[[MessageContext], Coroutine[Any, Any, None]]`): The function to call.
             filter (`Filter[Message]`): A filter that checks if the message passes the filter.
             continue_after (`Optional[str]`, optional): The tag of the handler to continue after. Defaults to None.
+            allow_continue_after_self (`bool`, optional): Same as current adding handler tag to continue_after.
         """
 
-        self._dp.add_handler(tag, MessageHandler(function, filter, continue_after))
+        self._dp.add_handler(
+            MessageHandler(
+                tag,
+                function,
+                filter,
+                continue_after,
+                allow_continue_after_self,
+                priority,
+            )
+        )
 
 
 class AddExtensions(DispatcherExtensions):

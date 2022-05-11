@@ -101,7 +101,7 @@ class Dispatcher:
             return False
         return tag in self._handlers[update_type]
 
-    def add_handler(self, tag: str, handler: HandlerTemplate):
+    def add_handler(self, handler: HandlerTemplate):
         """Adds a handler to the dispatcher.
 
         Args:
@@ -114,11 +114,13 @@ class Dispatcher:
             )
             self._handlers[handler.update_type] = {}
 
-        if tag in self._handlers[handler.update_type]:
-            raise HandlerRegistered(tag, handler.update_type)
+        if handler.tag in self._handlers[handler.update_type]:
+            raise HandlerRegistered(handler.tag, handler.update_type)
 
-        self._handlers[handler.update_type][tag] = handler
-        dispatcher_logger.info(f"Added handler {handler.update_type.__name__}:{tag}")
+        self._handlers[handler.update_type][handler.tag] = handler
+        dispatcher_logger.info(
+            f"Added handler {handler.update_type.__name__}:{handler.tag}"
+        )
 
     def add_exception_handler(self, exception_handler: AbstractExceptionHandler):
         """Adds an exception handler to the dispatcher.
@@ -201,6 +203,7 @@ class Dispatcher:
                             result.metadata,
                             *c.args,
                             **c.kwargs,
+                            continue_with_key=c.keys,
                         )
                         self._continuously_handlers.remove(batch)
                         return  # Don't process the update anymore
@@ -241,7 +244,6 @@ class Dispatcher:
             await handler.process(
                 self,
                 update,
-                handler_tag,
                 filter_data,
                 *args,
                 **kwargs,

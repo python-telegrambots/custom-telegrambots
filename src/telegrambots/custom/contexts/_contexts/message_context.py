@@ -18,10 +18,20 @@ if TYPE_CHECKING:
 
 class MessageContext(GenericContext[Message]):
     def __init__(
-        self, dp: "Dispatcher", update: Update, handler_tag: str, **kwargs: Any
+        self,
+        dp: "Dispatcher",
+        update: Update,
+        handler_tag: str,
+        *args: Any,
+        **kwargs: Any,
     ) -> None:
         super().__init__(
-            dp, update=update, update_type=Message, handler_tag=handler_tag, **kwargs
+            dp,
+            update,
+            Message,
+            handler_tag,
+            *args,
+            **kwargs,
         )
 
     @final
