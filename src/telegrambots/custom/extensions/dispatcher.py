@@ -1,14 +1,14 @@
 from abc import ABC
-from typing import TYPE_CHECKING, Any, Optional, final, Coroutine, Callable
-from ..filters import Filter
+from typing import TYPE_CHECKING, Any, Callable, Coroutine, Optional, final
+
+from telegrambots.wrapper.types.objects import CallbackQuery, Message
 from ..contexts import CallbackQueryContext, MessageContext
-from ..contexts._contexts.context_template import GenericContext
-from ..handlers._handlers.update_handler import CallbackQueryHandler, MessageHandler
-from ..handlers._handlers.handler_template import Handler
+
+from ..contexts._contexts.context_template import Context
+from ..filters import Filter
 from ..general import TUpdate
-
-from telegrambots.wrapper.types.objects import CallbackQuery, Message, Update
-
+from ..handlers import CallbackQueryHandler, MessageHandler
+from ..handlers._handlers.handler_template import Handler
 
 if TYPE_CHECKING:
     from .. import Dispatcher
@@ -31,7 +31,6 @@ class AddHandlerViaDecoratorExtension(DispatcherExtensions):
     def any(
         self,
         type_of_update: type[TUpdate],
-        extractor: Callable[[Update], Optional[TUpdate]],
         filter: Filter[TUpdate],
         tag: Optional[str] = None,
         continue_after: Optional[list[str]] = None,
@@ -50,14 +49,14 @@ class AddHandlerViaDecoratorExtension(DispatcherExtensions):
         """
 
         def decorator(
-            _function: Callable[[GenericContext[TUpdate]], Coroutine[Any, Any, None]]
+            _function: Callable[[Context[TUpdate]], Coroutine[Any, Any, None]]
         ):
             n_tag = tag or _function.__name__
             self._dp.add_handler(
                 Handler(
+                    self._dp,
                     n_tag,
                     type_of_update,
-                    extractor,
                     _function,
                     filter,
                     continue_after,
@@ -165,6 +164,7 @@ class AddHandlersExtensions(DispatcherExtensions):
 
         self._dp.add_handler(
             CallbackQueryHandler(
+                self._dp,
                 tag,
                 function,
                 filter,
@@ -195,6 +195,7 @@ class AddHandlersExtensions(DispatcherExtensions):
 
         self._dp.add_handler(
             MessageHandler(
+                self._dp,
                 tag,
                 function,
                 filter,

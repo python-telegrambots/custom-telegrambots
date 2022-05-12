@@ -27,22 +27,22 @@ from ..key_resolvers import (
 from ..filters import Filter, messages as mf
 
 if TYPE_CHECKING:
-    from .. import ContextTemplate
+    from .. import Context
     from ..contexts import CallbackQueryContext, MessageContext
 
 
 class ContextExtensions(ABC):
-    def __init__(self, context: "ContextTemplate") -> None:
+    def __init__(self, context: "Context[Any]") -> None:
         self.__context = context
 
     @final
     @property
-    def _context(self) -> "ContextTemplate":
+    def _context(self) -> "Context[Any]":
         return self.__context
 
 
 class PropagationExtension(ContextExtensions):
-    def __init__(self, context: "ContextTemplate") -> None:
+    def __init__(self, context: "Context[Any]") -> None:
         super().__init__(context)
 
     def stop(self) -> NoReturn:
@@ -55,7 +55,7 @@ class PropagationExtension(ContextExtensions):
 
 
 class ContinueWithThisExtensions(ContextExtensions):
-    def __init__(self, context: "ContextTemplate") -> None:
+    def __init__(self, context: "Context[Any]") -> None:
         super().__init__(context)
 
     def callback_query(
@@ -271,7 +271,7 @@ class ContinueWithThisExtensions(ContextExtensions):
 
 
 class ContinueWithExtensions(ContextExtensions):
-    def __init__(self, context: "ContextTemplate") -> None:
+    def __init__(self, context: "Context[Any]") -> None:
         super().__init__(context)
 
         # extensions

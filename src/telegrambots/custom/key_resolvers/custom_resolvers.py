@@ -1,14 +1,13 @@
 from abc import ABC
-from typing import Callable, Generic, Optional
+from typing import Callable, Generic
 
-from telegrambots.wrapper.types.objects import CallbackQuery, Message, Update
+from telegrambots.wrapper.types.objects import CallbackQuery, Message
 
 from ..general import TKey, TUpdate
 from .key_resolver import AbstractKeyResolver, KeyResolver
 
 
 def create_key(
-    choose_update: Callable[[Update], Optional[TUpdate]],
     choose_key: Callable[[TUpdate], TKey],
     key_value: TKey,
 ) -> AbstractKeyResolver[TUpdate, TKey]:
@@ -20,7 +19,7 @@ def create_key(
         `choose_key`: A function that takes the actual update and returns the key.
         `key_value`: The value of the key to compare with extracted key.
     """
-    return KeyResolver(choose_update, choose_key, key_value)
+    return KeyResolver(choose_key, key_value)
 
 
 def create_callback_query_key(
@@ -33,7 +32,6 @@ def create_callback_query_key(
         `key_value`: The value of the key to compare with extracted key.
     """
     return create_key(
-        lambda update: update.callback_query,
         choose_key,
         key_value,
     )
@@ -48,29 +46,17 @@ def create_message_key(
         `choose_key`: A function that takes the actual message and returns the key.
         `key_value`: The value of the key to compare with extracted key.
     """
-    return create_key(lambda update: update.message, choose_key, key_value)
+    return create_key(choose_key, key_value)
 
 
 class CallbackQueryKeyResolver(Generic[TKey], AbstractKeyResolver[CallbackQuery, TKey]):
     def __init__(self, key: TKey):
         super().__init__(key)
 
-    def __extractor__(self, update: Update):
-        c = update.callback_query
-        if c is not None:
-            return c
-        raise ValueError("Update has no callback query")
-
 
 class MessageKeyResolver(Generic[TKey], AbstractKeyResolver[Message, TKey], ABC):
     def __init__(self, key: TKey):
         super().__init__(key)
-
-    def __extractor__(self, update: Update):
-        m = update.message
-        if m is not None:
-            return m
-        raise ValueError("Update has no message")
 
 
 class MessageSenderId(MessageKeyResolver[int]):

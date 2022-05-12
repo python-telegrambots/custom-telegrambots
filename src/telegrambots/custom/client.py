@@ -1,4 +1,4 @@
-from typing import Optional, cast, Union
+from typing import Any, Optional, cast, Union
 
 from telegrambots.wrapper.client import TelegramBotsClient
 from telegrambots.wrapper.types.methods import (
@@ -64,14 +64,14 @@ from telegrambots.wrapper.types.methods import (
     SendGame,
     SendInvoice,
     SendLocation,
-    SendDice,
-    SendVideoNote,
-    SendVoice,
-    SetChatPermissions,
-    SendContact,
-    SendVenue,
-    SendPhoto,
-    SendPoll,
+    # SendDice,
+    # SendVideoNote,
+    # SendVoice,
+    # SetChatPermissions,
+    # SendContact,
+    # SendVenue,
+    # SendPhoto,
+    # SendPoll,
 )
 from telegrambots.wrapper.types.objects import (
     ForceReply,
@@ -183,7 +183,7 @@ class TelegramBot(TelegramBotsClient):
         limit: int = 100,
         timeout: int = 0,
         allowed_updates: Optional[list[str]] = None,
-    ) -> list[Update]:
+    ) -> list[Update[Any]]:
         """Use this method to receive incoming updates using long polling.
 
         Args:

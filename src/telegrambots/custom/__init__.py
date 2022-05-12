@@ -7,7 +7,7 @@ from .contexts import (
     TextMessageContext,
     CallbackQueryContext,
     ContinueWithInfo,
-    ContextTemplate,
+    Context,
 )
 from .key_resolvers import (
     create_callback_query_key,
@@ -22,7 +22,7 @@ __all__ = [
     "Dispatcher",
     "message_filters",
     "callback_query_filters",
-    "ContextTemplate",
+    "Context",
     "ContinueWithInfo",
     "MessageContext",
     "CallbackQueryContext",
@@ -30,5 +30,5 @@ __all__ = [
     "create_message_key",
     "create_key",
     "KeyBuilder",
-    "TextMessageContext"
+    "TextMessageContext",
 ]

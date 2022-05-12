@@ -10,36 +10,22 @@ from telegrambots.wrapper.types.objects import (
     ForceReply,
 )
 
-from .context_template import GenericContext
+from .context_template import Context
 
 if TYPE_CHECKING:
     from ...dispatcher import Dispatcher
 
 
-class MessageContext(GenericContext[Message]):
+class MessageContext(Context[Message]):
     def __init__(
         self,
         dp: "Dispatcher",
-        update: Update,
+        update: Update[Message],
         handler_tag: str,
         *args: Any,
-        **kwargs: Any,
+        **kwargs: Any
     ) -> None:
-        super().__init__(
-            dp,
-            update,
-            Message,
-            handler_tag,
-            *args,
-            **kwargs,
-        )
-
-    @final
-    def __extractor__(self, update: Update) -> Message:
-        m = update.message
-        if m is not None:
-            return m
-        raise ValueError("Update has no message")
+        super().__init__(dp, update, Message, handler_tag, *args, **kwargs)
 
     @final
     async def reply_text(
@@ -99,9 +85,15 @@ class MessageContext(GenericContext[Message]):
 
 class TextMessageContext(MessageContext):
     def __init__(
-        self, dp: "Dispatcher", update: Update, handler_tag: str, **kwargs: Any
+        self,
+        dp: "Dispatcher",
+        update: Update[Message],
+        update_type: type[Any],
+        handler_tag: str,
+        *args: Any,
+        **kwargs: Any
     ) -> None:
-        super().__init__(dp, update=update, handler_tag=handler_tag, **kwargs)
+        super().__init__(dp, update, handler_tag, *args, **kwargs)
 
     @final
     @property

@@ -7,36 +7,22 @@ from telegrambots.wrapper.types.objects import (
     InlineKeyboardMarkup,
 )
 
-from .context_template import GenericContext
+from .context_template import Context
 
 if TYPE_CHECKING:
     from ...dispatcher import Dispatcher
 
 
-class CallbackQueryContext(GenericContext[CallbackQuery]):
+class CallbackQueryContext(Context[CallbackQuery]):
     def __init__(
         self,
         dp: "Dispatcher",
-        update: Update,
+        update: Update[CallbackQuery],
         handler_tag: str,
         *args: Any,
         **kwargs: Any,
     ) -> None:
-        super().__init__(
-            dp,
-            update,
-            CallbackQuery,
-            handler_tag,
-            *args,
-            **kwargs,
-        )
-
-    @final
-    def __extractor__(self, update: Update) -> CallbackQuery:
-        c = update.callback_query
-        if c is not None:
-            return c
-        raise ValueError("Update has no callback query")
+        super().__init__(dp, update, CallbackQuery, handler_tag, *args, **kwargs)
 
     @final
     @property

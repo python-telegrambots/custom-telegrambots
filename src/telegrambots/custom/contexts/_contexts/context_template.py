@@ -1,7 +1,5 @@
-from abc import ABC, ABCMeta
 from typing import (
     Any,
-    Callable,
     Generic,
     Mapping,
     Optional,
@@ -11,7 +9,7 @@ from typing import (
 
 from telegrambots.wrapper.types.objects import Update
 
-from ...general import Exctractable, TUpdate
+from ...general import TUpdate
 from ...extensions.context import PropagationExtension, ContinueWithExtensions
 
 
@@ -20,16 +18,16 @@ if TYPE_CHECKING:
     from ...client import TelegramBot
 
 
-class ContextTemplate(metaclass=ABCMeta):
+class Context(Generic[TUpdate], Mapping[str, Any]):
     def __init__(
         self,
         dp: "Dispatcher",
-        update: Update,
+        update: Update[TUpdate],
         update_type: type[Any],
         handler_tag: str,
         *args: Any,
         **kwargs: Any,
-    ):
+    ) -> None:
         self.__dp = dp
         self.__update = update
         self.__update_type = update_type
@@ -40,6 +38,24 @@ class ContextTemplate(metaclass=ABCMeta):
         # extensions
         self.__propagation: Optional[PropagationExtension] = None
         self.__continue_with: Optional[ContinueWithExtensions] = None
+
+    def __getitem__(self, name: str):
+        return self.kwargs[name]
+
+    def __setitem__(self, name: str, value: Any):
+        self.kwargs[name] = value
+
+    def __iter__(self):
+        return iter(self.kwargs)
+
+    def __len__(self) -> int:
+        return len(self.kwargs)
+
+    @final
+    @property
+    def update(self) -> TUpdate:
+        """`TUpdate`: Update instance"""
+        return self.wrapper_update.actual_update
 
     @final
     @property
@@ -67,7 +83,7 @@ class ContextTemplate(metaclass=ABCMeta):
 
     @final
     @property
-    def wrapper_update(self) -> Update:
+    def wrapper_update(self) -> Update[TUpdate]:
         return self.__update
 
     @final
@@ -95,61 +111,3 @@ class ContextTemplate(metaclass=ABCMeta):
         if self.__continue_with is None:
             self.__continue_with = ContinueWithExtensions(self)
         return self.__continue_with
-
-
-class GenericContext(
-    Generic[TUpdate], Exctractable[TUpdate], Mapping[str, Any], ContextTemplate, ABC
-):
-    def __init__(
-        self,
-        dp: "Dispatcher",
-        update: Update,
-        update_type: type[Any],
-        handler_tag: str,
-        *args: Any,
-        **kwargs: Any,
-    ) -> None:
-        super().__init__(dp, update, update_type, handler_tag, *args, **kwargs)
-
-    def __getitem__(self, name: str):
-        return self.kwargs[name]
-
-    def __setitem__(self, name: str, value: Any):
-        self.kwargs[name] = value
-
-    def __iter__(self):
-        return iter(self.kwargs)
-
-    def __len__(self) -> int:
-        return len(self.kwargs)
-
-    @final
-    @property
-    def update(self) -> TUpdate:
-        """`TUpdate`: Update instance"""
-        inner = self.__extractor__(self.wrapper_update)
-        if inner is None:
-            raise ValueError(f"Cannot exctract inner update.")
-        return inner
-
-
-class Context(Generic[TUpdate], GenericContext[TUpdate]):
-    def __init__(
-        self,
-        _exctractor: Callable[[Update], Optional[TUpdate]],
-        dp: "Dispatcher",
-        update: Update,
-        update_type: type[Any],
-        handler_tag: str,
-        *args: Any,
-        **kwargs: Any,
-    ) -> None:
-        super().__init__(dp, update, update_type, handler_tag, *args, **kwargs)
-        self.__extractor = _exctractor
-
-    @final
-    def __extractor__(self, update: Update) -> TUpdate:
-        r = self.__extractor(update)
-        if r is None:
-            raise ValueError(f"Cannot exctract inner update.")
-        return r

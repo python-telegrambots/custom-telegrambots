@@ -17,7 +17,7 @@ from ...key_resolvers import (
 class ContinueWithInfo(Generic[TUpdate]):
     target_tag: str
     update_type: type[TUpdate]
-    resolve_update: Callable[[Update], Optional[TUpdate]]
+    resolve_update: Callable[[Update[TUpdate]], Optional[TUpdate]]
     keys: Sequence[AbstractKeyResolver[TUpdate, Any]]
     priority: int = 0
     args: tuple[Any, ...] = dataclasses.field(default_factory=tuple)  # type: ignore
@@ -116,7 +116,7 @@ class ContinueWithInfo(Generic[TUpdate]):
 
 
 class ContinuouslyHandlerTemplate:
-    def check_keys(self, update: Update):
+    def check_keys(self, update: Update[Any]):
         return all(key.is_key(update) for key in self.keys)
 
     @property

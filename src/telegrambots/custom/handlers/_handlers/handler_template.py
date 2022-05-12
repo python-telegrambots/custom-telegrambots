@@ -1,8 +1,8 @@
 from abc import ABC, ABCMeta, abstractmethod
 from typing import (
     Any,
+    Awaitable,
     Callable,
-    Coroutine,
     Generic,
     Mapping,
     Optional,
@@ -12,9 +12,16 @@ from typing import (
 
 from telegrambots.wrapper.types.objects import Update
 
-from ...contexts._contexts.context_template import Context, GenericContext
+from ...contexts._contexts.context_template import Context
 from ...filters._filters.filter_template import Filter
-from ...general import Exctractable, TUpdate, check, extract, ContainedResult
+from ...general import (
+    Exctractable,
+    TUpdate,
+    check,
+    extract,
+    ContainedResult,
+    general_extractor,
+)
 
 if TYPE_CHECKING:
     from ...dispatcher import Dispatcher
@@ -24,8 +31,7 @@ class HandlerTemplate(metaclass=ABCMeta):
     @abstractmethod
     async def __process__(
         self,
-        dp: "Dispatcher",
-        update: Update,
+        update: Update[Any],
         filter_data: Mapping[str, Any],
         *args: Any,
         **kwargs: Any,
@@ -33,7 +39,7 @@ class HandlerTemplate(metaclass=ABCMeta):
         ...
 
     @abstractmethod
-    def should_process(self, update: Update) -> ContainedResult:
+    def should_process(self, update: Update[Any]) -> ContainedResult:
         ...
 
     @property
@@ -47,6 +53,11 @@ class HandlerTemplate(metaclass=ABCMeta):
         ...
 
     @property
+    @abstractmethod
+    def dp(self) -> "Dispatcher":
+        ...
+
+    @property
     def continue_after(self) -> Optional[list[str]]:
         return None
 
@@ -56,14 +67,12 @@ class HandlerTemplate(metaclass=ABCMeta):
 
     async def process(
         self,
-        dp: "Dispatcher",
-        update: Update,
+        update: Update[Any],
         filter_data: Mapping[str, Any],
         *args: Any,
         **kwargs: Any,
     ) -> None:
         return await self.__process__(
-            dp,
             update,
             filter_data,
             *args,
@@ -74,6 +83,7 @@ class HandlerTemplate(metaclass=ABCMeta):
 class GenericHandler(Generic[TUpdate], Exctractable[TUpdate], ABC, HandlerTemplate):
     def __init__(
         self,
+        dp: "Dispatcher",
         tag: str,
         _filter: Filter[TUpdate],
         update_type: type[TUpdate],
@@ -82,6 +92,7 @@ class GenericHandler(Generic[TUpdate], Exctractable[TUpdate], ABC, HandlerTempla
         priority: int = 0,
     ) -> None:
         super().__init__()
+        self._dp = dp
         self._tag = tag
         self._filter = _filter
         self._update_type = update_type
@@ -96,11 +107,14 @@ class GenericHandler(Generic[TUpdate], Exctractable[TUpdate], ABC, HandlerTempla
 
         self._continue_after = continue_after
 
+    @final
+    def __extractor__(self, update: Update[TUpdate]) -> TUpdate:
+        return general_extractor(update)
+
     @abstractmethod
     async def __process__(
         self,
-        dp: "Dispatcher",
-        update: Update,
+        update: Update[TUpdate],
         filter_data: Mapping[str, Any],
         *args: Any,
         **kwargs: Any,
@@ -108,7 +122,7 @@ class GenericHandler(Generic[TUpdate], Exctractable[TUpdate], ABC, HandlerTempla
         ...
 
     @final
-    def should_process(self, update: Update) -> ContainedResult:
+    def should_process(self, update: Update[TUpdate]) -> ContainedResult:
         checked = check(self._filter, extract(self, update))
         return ContainedResult(checked, self._filter)
 
@@ -132,20 +146,26 @@ class GenericHandler(Generic[TUpdate], Exctractable[TUpdate], ABC, HandlerTempla
     def priority(self) -> int:
         return self._priority
 
+    @final
+    @property
+    def dp(self) -> "Dispatcher":
+        return self._dp
 
-class Handler(Generic[TUpdate], GenericHandler[TUpdate]):
+
+class AbstractHandler(Generic[TUpdate], GenericHandler[TUpdate]):
     def __init__(
         self,
+        dp: "Dispatcher",
         tag: str,
         update_type: type[TUpdate],
-        exctractor: Callable[[Update], Optional[TUpdate]],
-        processor: Callable[[GenericContext[TUpdate]], Coroutine[Any, Any, None]],
+        processor: Callable[[Context[TUpdate]], Awaitable[None]],
         filter: Filter[TUpdate],
         continue_after: Optional[list[str]] = None,
         allow_continue_after_self: bool = False,
         priority: int = 0,
     ) -> None:
         super().__init__(
+            dp,
             tag,
             filter,
             update_type,
@@ -153,33 +173,59 @@ class Handler(Generic[TUpdate], GenericHandler[TUpdate]):
             allow_continue_after_self,
             priority,
         )
-        self._exctractor = exctractor
         self._processor = processor
 
     @final
-    def __extractor__(self, update: Update) -> TUpdate:
-        d = self._exctractor(update)
-        if d is None:
-            raise ValueError("Can't resolve actual update.")
-        return d
-
     async def __process__(
         self,
-        dp: "Dispatcher",
-        update: Update,
+        update: Update[TUpdate],
         filter_data: Mapping[str, Any],
         *args: Any,
         **kwargs: Any,
     ):
         kwargs.update(**filter_data)
-        return await self._processor(
-            Context(
-                self.__extractor__,
-                dp,
-                update,
-                self.update_type,
-                self.tag,
-                *args,
-                **kwargs,
-            )
+        return await self._processor(self._build_context(update, *args, **kwargs))
+
+    @abstractmethod
+    def _build_context(
+        self,
+        update: Update[TUpdate],
+        *args: Any,
+        **kwargs: Any,
+    ) -> Context[TUpdate]:
+        ...
+
+
+class Handler(Generic[TUpdate], AbstractHandler[TUpdate]):
+    def __init__(
+        self,
+        dp: "Dispatcher",
+        tag: str,
+        update_type: type[TUpdate],
+        processor: Callable[[Context[TUpdate]], Awaitable[None]],
+        filter: Filter[TUpdate],
+        continue_after: Optional[list[str]] = None,
+        allow_continue_after_self: bool = False,
+        priority: int = 0,
+    ) -> None:
+        super().__init__(
+            dp,
+            tag,
+            update_type,
+            processor,
+            filter,
+            continue_after,
+            allow_continue_after_self,
+            priority,
+        )
+
+    @final
+    def _build_context(self, update: Update[TUpdate], *args: Any, **kwargs: Any):
+        return Context(
+            self.dp,
+            update,
+            self.update_type,
+            self.tag,
+            *args,
+            **kwargs,
         )

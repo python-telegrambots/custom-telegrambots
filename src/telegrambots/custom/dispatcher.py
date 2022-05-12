@@ -37,7 +37,7 @@ class Dispatcher:
         self,
         _bot: "TelegramBot",
         *,
-        processor_type: Optional[type[ProcessorTemplate[Update]]] = None,
+        processor_type: Optional[type[ProcessorTemplate[Update[Any]]]] = None,
     ) -> None:
 
         """Initializes the dispatcher.
@@ -52,9 +52,9 @@ class Dispatcher:
         self._continuously_handlers: list[tuple[ContinuouslyHandlerTemplate]] = []
         self._handle_errors: list[AbstractExceptionHandler] = []
 
-        self._processor: ProcessorTemplate[Update]
+        self._processor: ProcessorTemplate[Update[Any]]
         if processor_type is None:
-            self._processor = SequentialProcessor[Update](self._process_update)
+            self._processor = SequentialProcessor[Update[Any]](self._process_update)
         else:
             self._processor = processor_type(self._process_update)
 
@@ -75,7 +75,7 @@ class Dispatcher:
             self.__add = AddExtensions(self)
         return self.__add
 
-    async def feed_update(self, update: Update):
+    async def feed_update(self, update: Update[Any]):
         """Feeds an update to the dispatcher.
 
         Args:
@@ -173,7 +173,7 @@ class Dispatcher:
             async for update in self.bot.stream_updates(list(allowed_updates)):
                 await self.feed_update(update)
 
-    async def _process_update(self, update: Update):
+    async def _process_update(self, update: Update[Any]):
         update_type = update.update_type
         if update_type is None:
             await self._try_handle_error(ValueError(f"Unknown update type: {update}"))
@@ -234,7 +234,7 @@ class Dispatcher:
     async def _do_handling(
         self,
         handler: HandlerTemplate,
-        update: Update,
+        update: Update[Any],
         handler_tag: str,
         filter_data: Mapping[str, Any],
         *args: Any,
@@ -242,7 +242,6 @@ class Dispatcher:
     ):
         try:
             await handler.process(
-                self,
                 update,
                 filter_data,
                 *args,
