@@ -17,58 +17,37 @@ _Package is in preview state and theses are all in preview and may change later.
 See [Wiki](https://github.com/python-telegrambots/custom-telegrambots/wiki/) for more working examples.
 
 ```py
-import asyncio
-
-from telegrambots.custom import TelegramBot, Dispatcher
-from telegrambots.custom.contexts import MessageContext
-
 from telegrambots.custom import (
+    TelegramBot,
+    MessageContext,
     message_filters as mf,
 )  # -> filters for each update type are in separate modules.
 
-# you can easily add new filters by importing them and adding them to the list.
 
 # Create main bot object, this object may contains all available api methods.
 bot = TelegramBot("BOT_TOKEN")
 
-
-# A function to handle errors inside handlers.
-async def handle_error(_: TelegramBot, e: Exception):
-    print(e)
-
-
 # Dispatcher is to process updates and dispatches them to handlers.
-dp = Dispatcher(
-    bot, handle_error
-)  # By default, the dispatcher will process updates sequentially.
+dp = bot.dispatcher  # By default, the dispatcher will process updates sequentially.
+
+dp.add_default_exception_handler()  # Simple err handler that prints error message.
 
 
 # Use decorator to register handler for each update type.
 # You can use filters and combine them.
-@dp.add.handlers.via_decorator.message(mf.regex("^/start") & mf.private)
+@dp.add.handlers.via_decorator.message(mf.Regex("^/start") & mf.private)
 async def handle_message(
     context: MessageContext,
 ):  # -> async callback function to handle update
     await context.reply_text(
         "Started"
     )  # -> bound method for messages, only available in `MessageContext`
-    await asyncio.sleep(5)
-    await context.reply_text("Done")
-
-
-async def main():
-    me = await bot.get_me()
-    print(me.pretty_str())  # let's know who we are.
-
-    print("Streaming updates ...")
-    # For now you should fetch updates manually and feed them to dispatcher.
-    async for update in bot.stream_updates(["message"]):
-        await dp.feed_update(update)
 
 
 if __name__ == "__main__":
     # Fire up the event loop.
-    asyncio.run(main())
+    dp.unlimited()
+
 ```
 
 ### Process updates in parallel
@@ -85,7 +64,6 @@ from src.telegrambots.custom.processor import ParallelProcessor
 # Dispatcher is to process updates and dispatches them to handlers.
 dp = Dispatcher(
     bot,
-    handle_error=handle_error,
     processor_type=ParallelProcessor,  # Now the dispatcher will use ParallelProcessor.
     # And it will process updates in parallel.
 )
@@ -132,12 +110,15 @@ class AdvancedMessageFilter(Filter[Message]):
 
     def __check__(self, update: Optional[Message]) -> bool:
         # ---- check if update is a valid for your case ----
+        self._set_metadata("balh", "Ablah")
         return True
 
     # ---- or anything you like ----
 
 # @dp.add.handlers.via_decorator.message(AdvancedMessageFilter())
-#    ...
+#    ---- sniff ----
+
+    context["balh"] # Ablah
 ```
 
 #### Using factories ( Fast, Low options )
@@ -215,7 +196,7 @@ So you need a way to keep track of a user, right?
 
 Here's where this package mages!!
 
-You can use `@context.continue_with_this_message` decorator inside your handler.
+You can use `@context.continue_with.this.message` decorator inside your handler.
 
 It's much likely similar to `@dp.register_message_handler`, except it takes one more parameter before filter. And it's a `keys`.
 
@@ -272,8 +253,8 @@ async def handle_message(
             if context.update.from_user:
 
                 # Again
-                @context.continue_with.this.message(
-                    keys=[MessageSenderId(context.update.from_user.id)],
+                @context.continue_with.this.message_from( # same as keys=[MessageSenderId(context.update from_user.id)],
+
                     filter=mf.text_message & mf.private,
                     tag="give_age", # Another name, it's important!
                     name=context.update.text,  # -> you can pass custom data to handler. they're available in callback's *args or **kwargs.
@@ -369,6 +350,8 @@ Let's modify unrelated method.
 ```py
 @dp.add.handlers.via_decorator.message(
     filter=mf.any_message, continue_after=["handle_message", "unrelated"] # notice we added this methods name to `continue_after`, so it can be continued with after itself ( user sends multiple unrelated updates in a row )
+    
+    # You can use allow_continue_after_self = True, which dose the same.
 )
 async def unrelated(context: MessageContext):
     await context.reply_text("Please try again with a text message.")
@@ -397,28 +380,18 @@ now everything is ready! fast and clear.
 Let see full example
 
 ```py
-import asyncio
-from typing import Any
-import logging
-import sys
-
-from telegrambots.custom import TelegramBot, Dispatcher
-from telegrambots.custom.contexts import MessageContext
-from telegrambots.custom import message_filters as mf
-from telegrambots.custom.processor import ParallelProcessor
-from telegrambots.custom.key_resolvers import MessageSenderId
-from telegrambots.custom.contexts import ContinueWithInfo
+from telegrambots.custom import (
+    TelegramBot,
+    message_filters as mf,
+    ContinueWithInfo,
+    MessageContext,
+)
 
 
 bot = TelegramBot("BOT_TOKEN")
+dp = bot.dispatcher
 
-
-# A function to handle errors inside handlers.
-async def handle_error(_: TelegramBot, e: Exception):
-    print(e)
-
-
-dp = Dispatcher(bot, handle_error=handle_error)
+dp.add_default_exception_handler()
 
 
 @dp.add.handlers.via_decorator.message(
@@ -430,43 +403,35 @@ async def give_name(context: MessageContext):
 
 
 @dp.add.handlers.via_decorator.message(
-    filter=mf.any_message & mf.private, continue_after=["handle_message", "unrelated"]
+    filter=mf.any_message & mf.private,
+    continue_after=["handle_message"],
+    allow_continue_after_self=True,
 )
 async def unrelated(context: MessageContext):
     await context.reply_text("Please try again with a text message.")
+
     if context.update.from_user:
-        keys = [MessageSenderId(context.update.from_user.id)]
+        user_id = context.update.from_user.id
         context.continue_with.many(
-            ContinueWithInfo.with_message("give_name", keys, priority=1),
-            ContinueWithInfo.with_message("unrelated", keys, priority=0),
+            ContinueWithInfo.with_message_from("give_name", user_id, priority=1),
+            ContinueWithInfo.with_message_from("unrelated", user_id, priority=0),
         )
 
 
-@dp.add.handlers.via_decorator.message(mf.regex("^/start") & mf.private)
+@dp.add.handlers.via_decorator.message(mf.Regex("^/start") & mf.private)
 async def handle_message(context: MessageContext):
     await context.reply_text("Please gimme you name ...")
 
     if context.update.from_user:
-        keys = [MessageSenderId(context.update.from_user.id)]
+        user_id = context.update.from_user.id
         context.continue_with.many(
-            ContinueWithInfo.with_message("give_name", keys, priority=1),
-            ContinueWithInfo.with_message("unrelated", keys, priority=0),
+            ContinueWithInfo.with_message_from("give_name", user_id, priority=1),
+            ContinueWithInfo.with_message_from("unrelated", user_id, priority=0),
         )
 
 
-async def main():
-    me = await bot.get_me()
-    print(me.pretty_str())  # let's know who we are.
-
-    print("Streaming updates ...")
-    # For now you should fetch updates manually and feed them to dispatcher.
-    async for update in bot.stream_updates(["message", "callback_query"]):
-        await dp.feed_update(update)
-
-
 if __name__ == "__main__":
-    # Fire up the event loop.
-    asyncio.run(main())
+    dp.unlimited()
 
 ```
 
