@@ -6,8 +6,28 @@ from telegrambots.wrapper.types.objects import (
 
 
 class InlineButtonBuilder:
-    def __init__(self) -> None:
+    """An helper class to simplify the creation of InlineKeyboardMarkup"""
+
+    def __init__(
+        self,
+        create: Optional[
+            Callable[[type[InlineKeyboardButton]], InlineKeyboardButton]
+        ] = None,
+    ) -> None:
+        """Create a new InlineButtonBuilder
+
+        An helper class to simplify the creation of InlineKeyboardMarkup
+
+        Args:
+            create: A function that creates a new InlineKeyboardButton.
+        """
         self._buttons: list[list[InlineKeyboardButton]] = [[]]
+        if create is not None:
+            self.append_button(create)
+
+    def __call__(self):
+        """Return the InlineKeyboardMarkup from builder."""
+        return self.build()
 
     def append_button(
         self,
@@ -15,6 +35,13 @@ class InlineButtonBuilder:
         row_index: Optional[int] = None,
         column_index: Optional[int] = None,
     ):
+        """Append a button to the builder.
+
+        Args:
+            create: A function that creates a new InlineKeyboardButton.
+            row_index: The row index of the button.
+            column_index: The column index of the button.
+        """
         if row_index is None:
             row_index = -1
 
@@ -27,6 +54,11 @@ class InlineButtonBuilder:
     def append_many_buttons(
         self, *create: Callable[[type[InlineKeyboardButton]], InlineKeyboardButton]
     ):
+        """Append many buttons to the builder.
+
+        Args:
+            *create: A list of functions that creates a new InlineKeyboardButton.
+        """
         for c in create:
             self.append_button(c)
         return self
@@ -38,6 +70,12 @@ class InlineButtonBuilder:
         ] = None,
         insert_index: Optional[int] = None,
     ):
+        """Append a row to the builder.
+
+        Args:
+            create: A function that creates a new InlineKeyboardButton.
+            insert_index: The index of the row.
+        """
         to_append = [] if create is None else [create(InlineKeyboardButton)]
 
         if insert_index is None:
@@ -47,4 +85,5 @@ class InlineButtonBuilder:
         return self
 
     def build(self):
+        """Return the InlineKeyboardMarkup from builder."""
         return InlineKeyboardMarkup(self._buttons)

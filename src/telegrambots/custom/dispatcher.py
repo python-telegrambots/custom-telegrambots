@@ -196,6 +196,7 @@ class Dispatcher:
                         dispatcher_logger.info(
                             f"Processing continuously handler {c.update_type.__name__}:{c.target_tag}"
                         )
+                        c.kwargs.update(continue_with_key=c.keys)
                         await self._do_handling(
                             handler,
                             update,
@@ -203,7 +204,6 @@ class Dispatcher:
                             result.metadata,
                             *c.args,
                             **c.kwargs,
-                            continue_with_key=c.keys,
                         )
                         self._continuously_handlers.remove(batch)
                         return  # Don't process the update anymore

@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING, Any, Callable, Coroutine
+from traceback import print_exception
 
 if TYPE_CHECKING:
     from ...dispatcher import Dispatcher
@@ -41,7 +42,7 @@ class ExceptionHandler(AbstractExceptionHandler):
 
 
 async def __handle_exception(dp: "Dispatcher", e: Exception):
-    print(e)
+    print_exception(e)
 
 
 default_exception_handler = ExceptionHandler(__handle_exception, Exception)

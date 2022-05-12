@@ -35,7 +35,7 @@ class ContextTemplate(metaclass=ABCMeta):
         self.__update_type = update_type
         self.__handler_tag = handler_tag
         self.__args = args
-        self.__kwargs = kwargs
+        self.__metadata = kwargs
 
         # extensions
         self.__propagation: Optional[PropagationExtension] = None
@@ -78,7 +78,7 @@ class ContextTemplate(metaclass=ABCMeta):
     @final
     @property
     def kwargs(self):
-        return self.__kwargs
+        return self.__metadata
 
     @final
     @property
@@ -110,16 +110,18 @@ class GenericContext(
         **kwargs: Any,
     ) -> None:
         super().__init__(dp, update, update_type, handler_tag, *args, **kwargs)
-        self._metadata: dict[str, Any] = kwargs
 
     def __getitem__(self, name: str):
-        return self._metadata[name]
+        return self.kwargs[name]
+
+    def __setitem__(self, name: str, value: Any):
+        self.kwargs[name] = value
 
     def __iter__(self):
-        return iter(self._metadata)
+        return iter(self.kwargs)
 
     def __len__(self) -> int:
-        return len(self._metadata)
+        return len(self.kwargs)
 
     @final
     @property
