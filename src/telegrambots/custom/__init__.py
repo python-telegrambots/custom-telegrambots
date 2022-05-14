@@ -4,7 +4,6 @@ from .filters import messages as message_filters
 from .filters import callback_query as callback_query_filters
 from .contexts import (
     MessageContext,
-    TextMessageContext,
     CallbackQueryContext,
     ContinueWithInfo,
     Context,
@@ -30,5 +29,4 @@ __all__ = [
     "create_message_key",
     "create_key",
     "KeyBuilder",
-    "TextMessageContext",
 ]

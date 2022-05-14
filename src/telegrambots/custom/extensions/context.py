@@ -65,6 +65,7 @@ class ContinueWithThisExtensions(ContextExtensions):
         tag: Optional[str] = None,
         other_continue_with: Optional[list[str]] = None,
         allow_continue_after_self: bool = False,
+        include_ctx_data: bool = True,
         *args: Any,
         **kwargs: Any,
     ):
@@ -81,7 +82,12 @@ class ContinueWithThisExtensions(ContextExtensions):
                     allow_continue_after_self,
                 )
             self._context.continue_with.callback_query(
-                _tag, keys, *args, **(self._context.kwargs | kwargs)
+                _tag,
+                keys,
+                0,
+                include_ctx_data,
+                *args,
+                **(self._context.kwargs | kwargs),
             )
 
         return decorator
@@ -93,6 +99,7 @@ class ContinueWithThisExtensions(ContextExtensions):
         tag: Optional[str] = None,
         other_continue_with: Optional[list[str]] = None,
         allow_continue_after_self: bool = False,
+        include_ctx_data: bool = True,
         *args: Any,
         **kwargs: Any,
     ):
@@ -111,6 +118,8 @@ class ContinueWithThisExtensions(ContextExtensions):
             self._context.continue_with.callback_query(
                 _tag,
                 [CallbackQuerySenderId(user_id)],
+                0,
+                include_ctx_data,
                 *args,
                 **(self._context.kwargs | kwargs),
             )
@@ -125,6 +134,7 @@ class ContinueWithThisExtensions(ContextExtensions):
         tag: Optional[str] = None,
         other_continue_with: Optional[list[str]] = None,
         allow_continue_after_self: bool = False,
+        include_ctx_data: bool = True,
         *args: Any,
         **kwargs: Any,
     ):
@@ -143,6 +153,8 @@ class ContinueWithThisExtensions(ContextExtensions):
             self._context.continue_with.callback_query(
                 _tag,
                 [CallbackQuerySenderId(user_id), CallbackQueryMessageId(message_id)],
+                0,
+                include_ctx_data,
                 *args,
                 **(self._context.kwargs | kwargs),
             )
@@ -156,6 +168,7 @@ class ContinueWithThisExtensions(ContextExtensions):
         tag: Optional[str] = None,
         other_continue_with: Optional[list[str]] = None,
         allow_continue_after_self: bool = False,
+        include_ctx_data: bool = True,
         *args: Any,
         **kwargs: Any,
     ):
@@ -174,6 +187,8 @@ class ContinueWithThisExtensions(ContextExtensions):
             self._context.continue_with.callback_query(
                 _tag,
                 [CallbackQueryMessageId(message_id)],
+                0,
+                include_ctx_data,
                 *args,
                 **(self._context.kwargs | kwargs),
             )
@@ -187,34 +202,7 @@ class ContinueWithThisExtensions(ContextExtensions):
         tag: Optional[str] = None,
         other_continue_with: Optional[list[str]] = None,
         allow_continue_after_self: bool = False,
-        *args: Any,
-        **kwargs: Any,
-    ):
-        def decorator(
-            _function: Callable[["MessageContext"], Coroutine[Any, Any, None]]
-        ):
-            _tag = tag or _function.__name__
-            if not self._context.dp.handler_tag_exists(_tag, Message):
-                self._context.dp.add.handlers.message(
-                    _tag,
-                    _function,
-                    filter,
-                    [self._context.handler_tag] + (other_continue_with or []),
-                    allow_continue_after_self,
-                )
-            self._context.continue_with.message(
-                _tag, keys, *args, **(self._context.kwargs | kwargs)
-            )
-
-        return decorator
-
-    def message_from(
-        self,
-        user_id: int,
-        filter: "Filter[Message]",
-        tag: Optional[str] = None,
-        other_continue_with: Optional[list[str]] = None,
-        allow_continue_after_self: bool = False,
+        include_ctx_data: bool = True,
         *args: Any,
         **kwargs: Any,
     ):
@@ -232,7 +220,43 @@ class ContinueWithThisExtensions(ContextExtensions):
                 )
             self._context.continue_with.message(
                 _tag,
-                [MessageSenderId(user_id)],
+                keys,
+                0,
+                include_ctx_data,
+                *args,
+                **(self._context.kwargs | kwargs),
+            )
+
+        return decorator
+
+    def message_from(
+        self,
+        user_id: int,
+        filter: "Filter[Message]",
+        tag: Optional[str] = None,
+        other_continue_with: Optional[list[str]] = None,
+        allow_continue_after_self: bool = False,
+        include_ctx_data: bool = True,
+        *args: Any,
+        **kwargs: Any,
+    ):
+        def decorator(
+            _function: Callable[["MessageContext"], Coroutine[Any, Any, None]]
+        ):
+            _tag = tag or _function.__name__
+            if not self._context.dp.handler_tag_exists(_tag, Message):
+                self._context.dp.add.handlers.message(
+                    _tag,
+                    _function,
+                    filter,
+                    [self._context.handler_tag] + (other_continue_with or []),
+                    allow_continue_after_self,
+                )
+            self._context.continue_with.message_from(
+                user_id,
+                _tag,
+                0,
+                include_ctx_data,
                 *args,
                 **(self._context.kwargs | kwargs),
             )
@@ -245,6 +269,7 @@ class ContinueWithThisExtensions(ContextExtensions):
         tag: Optional[str] = None,
         other_continue_with: Optional[list[str]] = None,
         allow_continue_after_self: bool = False,
+        include_ctx_data: bool = True,
         *args: Any,
         **kwargs: Any,
     ):
@@ -263,6 +288,8 @@ class ContinueWithThisExtensions(ContextExtensions):
             self._context.continue_with.message(
                 _tag,
                 [MessageSenderId(user_id)],
+                0,
+                include_ctx_data,
                 *args,
                 **(self._context.kwargs | kwargs),
             )
@@ -291,6 +318,7 @@ class ContinueWithExtensions(ContextExtensions):
         update_type: type[TUpdate],
         keys: Sequence[AbstractKeyResolver[TUpdate, Any]],
         priority: int = 0,
+        include_ctx_data: bool = True,
         *args: Any,
         **kwargs: Any,
     ) -> NoReturn:  # type: ignore
@@ -302,9 +330,12 @@ class ContinueWithExtensions(ContextExtensions):
             update_type (`type`): Type of the update.
             keys (`list[AbstractKeyResolver[TUpdate, Any]]`): Keys to resolve.
             priority (`int`): Priority of the handler.
+            include_ctx_data (`bool`): Whether to include the context data inside next handler.
             args (`Any`): Arguments to pass to the handler.
             kwargs (`Any`): Keyword arguments to pass to the handler.
         """
+        if include_ctx_data:
+            kwargs |= self._context.kwargs
         self._context.dp.add_continuously_handler(
             ContinuouslyHandler(
                 target_tag,
@@ -319,7 +350,7 @@ class ContinueWithExtensions(ContextExtensions):
         self._context.propagation.stop()
 
     def many(
-        self, *continue_with_info: ContinueWithInfo[Any]
+        self, *continue_with_info: ContinueWithInfo[Any], include_ctx_data: bool = True
     ) -> NoReturn:  # type: ignore
         """Continues the propagation of the current context, with another handler."""
         self._context.dp.add_continuously_handler(
@@ -331,7 +362,11 @@ class ContinueWithExtensions(ContextExtensions):
                     info.keys,
                     info.priority,
                     *info.args,
-                    **info.kwargs,
+                    **(
+                        info.kwargs
+                        if not include_ctx_data
+                        else info.kwargs | self._context.kwargs
+                    ),
                 )
                 for info in continue_with_info
             )
@@ -343,6 +378,7 @@ class ContinueWithExtensions(ContextExtensions):
         target_tag: str,
         keys: Sequence[AbstractKeyResolver[Message, Any]],
         priority: int = 0,
+        include_ctx_data: bool = True,
         *args: Any,
         **kwargs: Any,
     ) -> NoReturn:
@@ -351,6 +387,26 @@ class ContinueWithExtensions(ContextExtensions):
             Message,
             keys,
             priority,
+            include_ctx_data,
+            *args,
+            **kwargs,
+        )
+
+    def message_from(
+        self,
+        user_id: int,
+        target_tag: str,
+        priority: int = 0,
+        include_ctx_data: bool = True,
+        *args: Any,
+        **kwargs: Any,
+    ) -> NoReturn:
+        self.any(
+            target_tag,
+            Message,
+            [MessageSenderId(user_id)],
+            priority,
+            include_ctx_data,
             *args,
             **kwargs,
         )
@@ -360,6 +416,7 @@ class ContinueWithExtensions(ContextExtensions):
         target_tag: str,
         keys: Sequence[AbstractKeyResolver[CallbackQuery, Any]],
         priority: int = 0,
+        include_ctx_data: bool = True,
         *args: Any,
         **kwargs: Any,
     ) -> NoReturn:
@@ -368,6 +425,7 @@ class ContinueWithExtensions(ContextExtensions):
             CallbackQuery,
             keys,
             priority,
+            include_ctx_data,
             *args,
             **kwargs,
         )
@@ -375,6 +433,7 @@ class ContinueWithExtensions(ContextExtensions):
     def self(
         self,
         keys: Sequence[AbstractKeyResolver[CallbackQuery, Any]],
+        include_ctx_data: bool = True,
         *args: Any,
         **kwargs: Any,
     ) -> NoReturn:
@@ -382,12 +441,15 @@ class ContinueWithExtensions(ContextExtensions):
             self._context.handler_tag,
             self._context.update_type,
             keys,
+            0,
+            include_ctx_data,
             *args,
             **kwargs,
         )
 
     def self_shared_keys(
         self,
+        include_ctx_data: bool = True,
         *args: Any,
         **kwargs: Any,
     ) -> NoReturn:
@@ -395,6 +457,8 @@ class ContinueWithExtensions(ContextExtensions):
             self._context.handler_tag,
             self._context.update_type,
             self._context.kwargs["continue_with_key"],
+            0,
+            include_ctx_data,
             *args,
             **kwargs,
         )

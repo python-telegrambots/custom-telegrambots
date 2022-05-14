@@ -11,6 +11,7 @@ from telegrambots.wrapper.types.objects import Update
 
 from ...general import TUpdate
 from ...extensions.context import PropagationExtension, ContinueWithExtensions
+from ...general import TKey
 
 
 if TYPE_CHECKING:
@@ -111,3 +112,16 @@ class Context(Generic[TUpdate], Mapping[str, Any]):
         if self.__continue_with is None:
             self.__continue_with = ContinueWithExtensions(self)
         return self.__continue_with
+
+    def try_get_data(
+        self, /, name: str, type_of_data: type[TKey] = None
+    ) -> Optional[TKey]:
+        """Try to get data from the context.
+
+        Args:
+            name: Name of the data.
+            type_of_data: Type of the data ( Hint only ).
+        """
+        if name in self.kwargs:
+            return self.kwargs[name]
+        return None

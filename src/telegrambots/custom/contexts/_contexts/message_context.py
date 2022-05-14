@@ -27,6 +27,24 @@ class MessageContext(Context[Message]):
     ) -> None:
         super().__init__(dp, update, Message, handler_tag, *args, **kwargs)
 
+    @property
+    @final
+    def sender(self):
+        """Returns the sender of the message."""
+        return self.update.from_user
+
+    @property
+    @final
+    def chat(self):
+        """Returns the chat of the message."""
+        return self.update.chat
+
+    @property
+    @final
+    def text(self):
+        """Returns the text of the message."""
+        return self.update.text
+
     @final
     async def reply_text(
         self,
@@ -81,24 +99,3 @@ class MessageContext(Context[Message]):
             allow_sending_without_reply=allow_sending_without_reply,
             reply_markup=reply_markup,
         )
-
-
-class TextMessageContext(MessageContext):
-    def __init__(
-        self,
-        dp: "Dispatcher",
-        update: Update[Message],
-        update_type: type[Any],
-        handler_tag: str,
-        *args: Any,
-        **kwargs: Any
-    ) -> None:
-        super().__init__(dp, update, handler_tag, *args, **kwargs)
-
-    @final
-    @property
-    def text(self) -> str:
-        """Returns message text."""
-        if self.update.text is not None:
-            return self.update.text
-        raise ValueError("Update has no message")
