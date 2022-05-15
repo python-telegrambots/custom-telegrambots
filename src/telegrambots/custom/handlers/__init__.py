@@ -5,9 +5,10 @@ from .exceptions.exception_handler import (
     ExceptionHandler,
     default_exception_handler,
 )
-
+from ._handlers import abstracts
 
 __all__ = [
+    "abstracts",
     "Handler",
     "CallbackQueryHandler",
     "MessageHandler",

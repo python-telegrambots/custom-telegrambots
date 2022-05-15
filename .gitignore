@@ -8,3 +8,4 @@ dummy_test*
 .env
 telegrambots.egg-info/
 dist/
+plugins/

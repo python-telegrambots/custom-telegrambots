@@ -19,6 +19,7 @@ from .handlers._handlers.handler_template import HandlerTemplate
 from .processor import ProcessorTemplate, SequentialProcessor
 from .extensions.dispatcher import AddExtensions
 from .handlers import AbstractExceptionHandler, default_exception_handler
+from .general import TKey
 
 if TYPE_CHECKING:
     from .client import TelegramBot
@@ -51,6 +52,7 @@ class Dispatcher:
         self._handlers: dict[type[Any], dict[str, HandlerTemplate]] = {}
         self._continuously_handlers: list[tuple[ContinuouslyHandlerTemplate]] = []
         self._handle_errors: list[AbstractExceptionHandler] = []
+        self._shared_data: dict[str, Any] = {}
 
         self._processor: ProcessorTemplate[Update[Any]]
         if processor_type is None:
@@ -100,6 +102,16 @@ class Dispatcher:
         if update_type not in self._handlers:
             return False
         return tag in self._handlers[update_type]
+
+    def add_shared_data(self, key: str, value: TKey) -> TKey:
+        """Adds a shared data to the dispatcher.
+
+        Args:
+            key (`str`): The key of the shared data.
+            value (`TKey`): The value of the shared data.
+        """
+        self._shared_data[key] = value
+        return value
 
     def add_handler(self, handler: HandlerTemplate):
         """Adds a handler to the dispatcher.
@@ -200,7 +212,6 @@ class Dispatcher:
                         await self._do_handling(
                             handler,
                             update,
-                            c.target_tag,
                             result.metadata,
                             *c.args,
                             **c.kwargs,
@@ -211,9 +222,9 @@ class Dispatcher:
         if update_type not in self._handlers:
             return
 
-        for k, handler in sorted(
-            (k, h)
-            for k, h in sorted(
+        for _, handler in sorted(
+            (_, h)
+            for _, h in sorted(
                 self._handlers[update_type].items(),
                 key=lambda x: x[1].priority,
                 reverse=True,
@@ -223,7 +234,7 @@ class Dispatcher:
             result = handler.should_process(update)
             if result.result:
                 handling_result = await self._do_handling(
-                    handler, update, k, result.metadata
+                    handler, update, result.metadata
                 )
                 if handling_result is not None:
                     if handling_result:
@@ -235,11 +246,11 @@ class Dispatcher:
         self,
         handler: HandlerTemplate,
         update: Update[Any],
-        handler_tag: str,
         filter_data: Mapping[str, Any],
         *args: Any,
         **kwargs: Any,
     ):
+        kwargs |= self._shared_data
         try:
             await handler.process(
                 update,

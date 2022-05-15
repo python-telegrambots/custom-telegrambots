@@ -14,9 +14,11 @@ from .key_resolvers import (
     create_key,
     KeyBuilder,
 )
+from .handlers import abstracts
 
 
 __all__ = [
+    "abstracts",
     "TelegramBot",
     "Dispatcher",
     "message_filters",

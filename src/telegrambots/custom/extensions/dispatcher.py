@@ -1,14 +1,18 @@
+import importlib
+import inspect
+import os
 from abc import ABC
-from typing import TYPE_CHECKING, Any, Callable, Coroutine, Optional, final
+from pathlib import Path
+from typing import TYPE_CHECKING, Any, Callable, Coroutine, Generator, Optional, final
 
 from telegrambots.wrapper.types.objects import CallbackQuery, Message
-from ..contexts import CallbackQueryContext, MessageContext
 
+from ..contexts import CallbackQueryContext, MessageContext
 from ..contexts._contexts.context_template import Context
 from ..filters import Filter
 from ..general import TUpdate
 from ..handlers import CallbackQueryHandler, MessageHandler
-from ..handlers._handlers.handler_template import Handler
+from ..handlers._handlers.handler_template import AbstractHandler, Handler
 
 if TYPE_CHECKING:
     from .. import Dispatcher
@@ -31,7 +35,7 @@ class AddHandlerViaDecoratorExtension(DispatcherExtensions):
     def any(
         self,
         type_of_update: type[TUpdate],
-        filter: Filter[TUpdate],
+        filter: Optional[Filter[TUpdate]],
         tag: Optional[str] = None,
         continue_after: Optional[list[str]] = None,
         allow_continue_after_self: bool = False,
@@ -41,8 +45,7 @@ class AddHandlerViaDecoratorExtension(DispatcherExtensions):
 
         Args:
             type_of_update (`type[TUpdate]`): The type of update to handle.
-            extractor (`Callable[[Update], Optional[TUpdate]]`): A function that extracts the update from an update.
-            filter (`Filter[TUpdate]`): A filter that checks if the update passes the filter.
+            filter (`Filter[TUpdate]`, optional): A filter that checks if the update passes the filter.
             tag (`Optional[str]`, optional): A tag for the handler. Should be unique. Defaults to None.
             continue_after (`Optional[str]`, optional): The tag of the handler to continue after. Defaults to None.
             allow_continue_after_self (`bool`, optional): Same as current adding handler tag to continue_after.
@@ -69,7 +72,7 @@ class AddHandlerViaDecoratorExtension(DispatcherExtensions):
 
     def message(
         self,
-        filter: Filter[Message],
+        filter: Optional[Filter[Message]],
         tag: Optional[str] = None,
         continue_after: Optional[list[str]] = None,
         allow_continue_after_self: bool = False,
@@ -78,7 +81,7 @@ class AddHandlerViaDecoratorExtension(DispatcherExtensions):
         """Registers a handler for messages.
 
         Args:
-            filter (`Filter[Message]`): A filter that checks if the message passes the filter.
+            filter (`Filter[Message]`, optional): A filter that checks if the message passes the filter.
             tag (`str`): A tag for the handler. Should be unique.
             continue_after (`Optional[str]`, optional): The tag of the handler to continue after. Defaults to None.
             allow_continue_after_self (`bool`, optional): Same as current adding handler tag to continue_after.
@@ -98,7 +101,7 @@ class AddHandlerViaDecoratorExtension(DispatcherExtensions):
 
     def callback_query(
         self,
-        filter: Filter[CallbackQuery],
+        filter: Optional[Filter[CallbackQuery]],
         tag: Optional[str] = None,
         continue_after: Optional[list[str]] = None,
         allow_continue_after_self: bool = False,
@@ -107,7 +110,7 @@ class AddHandlerViaDecoratorExtension(DispatcherExtensions):
         """Registers a handler for callback queries.
 
         Args:
-            filter (`Filter[CallbackQuery]`): A filter that checks if the callback query passes the filter.
+            filter (`Filter[CallbackQuery]`, optional): A filter that checks if the callback query passes the filter.
             tag (`str`): A tag for the handler. Should be unique.
             continue_after (`Optional[str]`, optional): The tag of the handler to continue after. Defaults to None.
             allow_continue_after_self (`bool`, optional): Same as current adding handler tag to continue_after.
@@ -147,7 +150,7 @@ class AddHandlersExtensions(DispatcherExtensions):
         self,
         tag: str,
         function: Callable[[CallbackQueryContext], Coroutine[Any, Any, None]],
-        filter: Filter[CallbackQuery],
+        filter: Optional[Filter[CallbackQuery]] = None,
         continue_after: Optional[list[str]] = None,
         allow_continue_after_self: bool = False,
         priority: int = 0,
@@ -157,7 +160,7 @@ class AddHandlersExtensions(DispatcherExtensions):
         Args:
             tag (`str`): A tag for the handler. Should be unique.
             function (`Callable[[CallbackQueryContext], Coroutine[Any, Any, None]]`): The function to call.
-            filter (`Filter[CallbackQuery]`): A filter that checks if the callback query passes the filter.
+            filter (`Filter[CallbackQuery]`, optional): A filter that checks if the callback query passes the filter.
             continue_after (`Optional[str]`, optional): The tag of the handler to continue after. Defaults to None.
             allow_continue_after_self (`bool`, optional): Same as current adding handler tag to continue_after.
         """
@@ -178,7 +181,7 @@ class AddHandlersExtensions(DispatcherExtensions):
         self,
         tag: str,
         function: Callable[[MessageContext], Coroutine[Any, Any, None]],
-        filter: Filter[Message],
+        filter: Optional[Filter[Message]] = None,
         continue_after: Optional[list[str]] = None,
         allow_continue_after_self: bool = False,
         priority: int = 0,
@@ -188,7 +191,7 @@ class AddHandlersExtensions(DispatcherExtensions):
         Args:
             tag (`str`): A tag for the handler. Should be unique.
             function (`Callable[[MessageContext], Coroutine[Any, Any, None]]`): The function to call.
-            filter (`Filter[Message]`): A filter that checks if the message passes the filter.
+            filter (`Filter[Message]`, optional): A filter that checks if the message passes the filter.
             continue_after (`Optional[str]`, optional): The tag of the handler to continue after. Defaults to None.
             allow_continue_after_self (`bool`, optional): Same as current adding handler tag to continue_after.
         """
@@ -204,6 +207,64 @@ class AddHandlersExtensions(DispatcherExtensions):
                 priority,
             )
         )
+
+    @staticmethod
+    def __all(dir_path: Path):
+        """Returns all directories in a directory.
+
+        Args:
+            dir_path (`str`): The path to the directory.
+        """
+        return (Path(dir_path).joinpath(d).resolve() for d in os.listdir(dir_path))
+
+    @staticmethod
+    def __iter_modules(
+        file_path: Path, package: str = ""
+    ) -> Generator[str, None, None]:
+        """Returns all modules in a directory.
+
+        Args:
+            file_path (`str`): The path to the directory.
+        """
+
+        if not package:
+            package = file_path.stem
+
+        for file in AddHandlersExtensions.__all(file_path):
+            if file.is_dir():
+                yield from AddHandlersExtensions.__iter_modules(
+                    file, package + "." + file.name
+                )
+            elif file.is_file() and file.suffix == ".py":
+                if file.stem == "__init__":
+                    continue
+                yield package + "." + file.name[:-3]
+            else:
+                continue
+
+    def locate(self, path: Path):
+        """Registers a module for adding handlers.
+
+        Args:
+            path (`str`): The path to the directory.
+        """
+
+        for module_name in AddHandlersExtensions.__iter_modules(path):
+
+            try:
+                module = importlib.import_module(module_name)
+
+                for name, obj in inspect.getmembers(module, inspect.isclass):
+                    if issubclass(obj, AbstractHandler):
+                        if not inspect.isabstract(obj):
+                            instance: AbstractHandler[Any, Any] = obj()  # type: ignore
+                            instance.set_dp(self._dp)
+                            self._dp.add_handler(instance)
+
+                            yield name
+
+            except ImportError:
+                continue
 
 
 class AddExtensions(DispatcherExtensions):
