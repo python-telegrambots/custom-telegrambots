@@ -27,6 +27,12 @@ class MessageContext(Context[Message]):
     ) -> None:
         super().__init__(dp, update, Message, handler_tag, *args, **kwargs)
 
+    @final
+    @property
+    def message_id(self) -> int:
+        """Returns the message id"""
+        return self.update.message_id
+
     @property
     @final
     def sender(self):

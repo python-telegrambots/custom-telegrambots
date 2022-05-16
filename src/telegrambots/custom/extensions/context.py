@@ -115,9 +115,9 @@ class ContinueWithThisExtensions(ContextExtensions):
                     [self._context.handler_tag] + (other_continue_with or []),
                     allow_continue_after_self,
                 )
-            self._context.continue_with.callback_query(
+            self._context.continue_with.callback_query_from(
                 _tag,
-                [CallbackQuerySenderId(user_id)],
+                user_id,
                 0,
                 include_ctx_data,
                 *args,
@@ -150,9 +150,10 @@ class ContinueWithThisExtensions(ContextExtensions):
                     [self._context.handler_tag] + (other_continue_with or []),
                     allow_continue_after_self,
                 )
-            self._context.continue_with.callback_query(
+            self._context.continue_with.callback_query_same_message_from(
                 _tag,
-                [CallbackQuerySenderId(user_id), CallbackQueryMessageId(message_id)],
+                message_id,
+                user_id,
                 0,
                 include_ctx_data,
                 *args,
@@ -184,9 +185,9 @@ class ContinueWithThisExtensions(ContextExtensions):
                     [self._context.handler_tag] + (other_continue_with or []),
                     allow_continue_after_self,
                 )
-            self._context.continue_with.callback_query(
+            self._context.continue_with.callback_query_same_message(
                 _tag,
-                [CallbackQueryMessageId(message_id)],
+                message_id,
                 0,
                 include_ctx_data,
                 *args,
@@ -253,8 +254,8 @@ class ContinueWithThisExtensions(ContextExtensions):
                     allow_continue_after_self,
                 )
             self._context.continue_with.message_from(
-                user_id,
                 _tag,
+                user_id,
                 0,
                 include_ctx_data,
                 *args,
@@ -394,8 +395,8 @@ class ContinueWithExtensions(ContextExtensions):
 
     def message_from(
         self,
-        user_id: int,
         target_tag: str,
+        user_id: int,
         priority: int = 0,
         include_ctx_data: bool = True,
         *args: Any,
@@ -424,6 +425,64 @@ class ContinueWithExtensions(ContextExtensions):
             target_tag,
             CallbackQuery,
             keys,
+            priority,
+            include_ctx_data,
+            *args,
+            **kwargs,
+        )
+
+    def callback_query_from(
+        self,
+        target_tag: str,
+        user_id: int,
+        priority: int = 0,
+        include_ctx_data: bool = True,
+        *args: Any,
+        **kwargs: Any,
+    ) -> NoReturn:
+        self.any(
+            target_tag,
+            CallbackQuery,
+            [CallbackQuerySenderId(user_id)],
+            priority,
+            include_ctx_data,
+            *args,
+            **kwargs,
+        )
+
+    def callback_query_same_message_from(
+        self,
+        target_tag: str,
+        message_id: int,
+        user_id: int,
+        priority: int = 0,
+        include_ctx_data: bool = True,
+        *args: Any,
+        **kwargs: Any,
+    ) -> NoReturn:
+        self.any(
+            target_tag,
+            CallbackQuery,
+            [CallbackQuerySenderId(user_id), CallbackQueryMessageId(message_id)],
+            priority,
+            include_ctx_data,
+            *args,
+            **kwargs,
+        )
+
+    def callback_query_same_message(
+        self,
+        target_tag: str,
+        message_id: int,
+        priority: int = 0,
+        include_ctx_data: bool = True,
+        *args: Any,
+        **kwargs: Any,
+    ) -> NoReturn:
+        self.any(
+            target_tag,
+            CallbackQuery,
+            [CallbackQueryMessageId(message_id)],
             priority,
             include_ctx_data,
             *args,
