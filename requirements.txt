@@ -1,1 +1,2 @@
 telegrambots==0.0.12rc0
+pre-commit

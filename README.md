@@ -236,7 +236,7 @@ async def handle_message(
 ):  # -> async callback function to handle update
     await context.reply_text("Please gimme you name ...")
 
-    if context.update.from_user: 
+    if context.update.from_user:
 
         @context.continue_with.this.message(
             keys=[MessageSenderId(context.update.from_user.id)],
@@ -245,7 +245,7 @@ async def handle_message(
         )
         async def _(context: MessageContext):
             await context.reply_text(f"Ahh, your name is {context.update.text}!")
-            
+
             # ---- new code ----
             # Let's ask for user's age
             await context.reply_text(f"What's your age then?")
@@ -320,7 +320,7 @@ async def handle_message(context: MessageContext):
         context.continue_with.many(
             ContinueWithInfo.with_message("give_name", keys, priority=1), # first of all try to continue with `"give_name"` if possible ( filters should pass )
             # If this handler is invoked, we'll stop propagation! so the next one is not triggered.
-            ContinueWithInfo.with_message("unrelated", keys, priority=0), # If the first handler is not triggered and we reached this point, it means the update is unrelated. 
+            ContinueWithInfo.with_message("unrelated", keys, priority=0), # If the first handler is not triggered and we reached this point, it means the update is unrelated.
         )
 ```
 
@@ -350,7 +350,7 @@ Let's modify unrelated method.
 ```py
 @dp.add.handlers.via_decorator.message(
     filter=mf.any_message, continue_after=["handle_message", "unrelated"] # notice we added this methods name to `continue_after`, so it can be continued with after itself ( user sends multiple unrelated updates in a row )
-    
+
     # You can use allow_continue_after_self = True, which dose the same.
 )
 async def unrelated(context: MessageContext):
