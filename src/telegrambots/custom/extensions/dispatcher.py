@@ -1,5 +1,6 @@
 import importlib
 import inspect
+import logging
 import os
 from abc import ABC
 from pathlib import Path
@@ -16,6 +17,13 @@ from ..handlers._handlers.handler_template import AbstractHandler, Handler
 
 if TYPE_CHECKING:
     from .. import Dispatcher
+
+logging.basicConfig(
+    format="%(asctime)s %(message)s",
+    datefmt="%m/%d/%Y %I:%M:%S %p",
+    level=logging.INFO,
+)
+dispatcher_logger = logging.getLogger("telegrambots.dispatcher")
 
 
 class DispatcherExtensions(ABC):
@@ -254,16 +262,14 @@ class AddHandlersExtensions(DispatcherExtensions):
             try:
                 module = importlib.import_module(module_name)
 
-                for name, obj in inspect.getmembers(module, inspect.isclass):
+                for _, obj in inspect.getmembers(module, inspect.isclass):
                     if issubclass(obj, AbstractHandler):
                         if not inspect.isabstract(obj):
                             instance: AbstractHandler[Any, Any] = obj()  # type: ignore
                             instance.set_dp(self._dp)
                             self._dp.add_handler(instance)
-
-                            yield name
-
-            except ImportError:
+            except ImportError as e:
+                dispatcher_logger.error(f"Failed to import module {module_name}: {e}")
                 continue
 
 
